@@ -20,6 +20,14 @@
   const MAX_HISTORY_ITEMS = 10;
   const MAX_SETS_PER_FLEX_EXERCISE = 8;
   const MAX_EXERCISES_PER_BUBBLE = 6;
+  const FLEX_THEME = {
+    header: "#C96A2D",
+    footer: "#8F4517",
+    border: "#D68452",
+    accent: "#8F4517",
+    accentSoft: "#F7DFCF",
+    textMuted: "#6F5A4A"
+  };
   const DEFAULT_USER = {
     userId: null,
     displayName: "anonymous",
@@ -642,8 +650,8 @@
       '  <section class="panel-card">',
       '    <div class="panel-head">',
       "      <div>",
-      '        <h2 class="panel-title">送信プレビュー</h2>',
-      "        <p>送信される見た目に近い形で確認できます。</p>",
+      '        <h2 class="panel-title">送信内容プレビュー</h2>',
+      "        <p>送信に使う内容をアプリ内で確認できます。実際のLINE表示とは一部異なる場合があります。</p>",
       "      </div>",
       '      <span class="badge">' +
         escapeHtml(bubbles.length === 1 ? "bubble" : "carousel " + bubbles.length + "件") +
@@ -1020,6 +1028,7 @@
       }
       set[field] = target.value;
       touchWorkout();
+      syncRenderedSetSummary(exerciseId, setId);
       renderPreview();
     }
   }
@@ -1201,6 +1210,7 @@
   }
 
   function touchWorkout(renewWorkoutId) {
+    appState.workout = calculateWorkout(appState.workout);
     if (renewWorkoutId !== false) {
       appState.workout.workoutId = appState.workout.workoutId || generateId("workout");
     }
@@ -1379,12 +1389,46 @@
       "    </label>",
       "  </div>",
       '  <div class="set-summary">',
-      '    <small class="metric-label">推定1RM</small><strong class="metric-value">' +
+      '    <small class="metric-label">推定1RM</small><strong class="metric-value" data-set-summary="estimated1rm" data-exercise-id="' +
+        escapeHtml(exerciseId) +
+        '" data-set-id="' +
+        escapeHtml(set.setId) +
+        '">' +
         escapeHtml(hasValidSet ? formatMetric(set.estimated1rm || 0, "kg", 1) : "-") +
         "</strong>",
       "  </div>",
       "</div>"
     ].join("");
+  }
+
+  function syncRenderedSetSummary(exerciseId, setId) {
+    const exercise = appState.workout.exercises.find(function (item) {
+      return item.exerciseId === exerciseId;
+    });
+    if (!exercise) {
+      return;
+    }
+
+    const set = (exercise.sets || []).find(function (item) {
+      return item.setId === setId;
+    });
+    if (!set) {
+      return;
+    }
+
+    const summaryNode = document.querySelector(
+      '[data-set-summary="estimated1rm"][data-exercise-id="' +
+        cssEscape(exerciseId) +
+        '"][data-set-id="' +
+        cssEscape(setId) +
+        '"]'
+    );
+    if (!summaryNode) {
+      return;
+    }
+
+    const hasValidSet = isValidSetInput(toNullableNumber(set.weight), toNullableNumber(set.reps));
+    summaryNode.textContent = hasValidSet ? formatMetric(set.estimated1rm || 0, "kg", 1) : "-";
   }
 
   function renderExerciseMetrics(workout) {
@@ -1426,6 +1470,38 @@
   }
 
   function buildWorkoutBubble(workout, exercises, bubbleIndex, bubbleCount) {
+    const headerContents = [
+      {
+        type: "text",
+        text: workout.date || "-",
+        color: "#ffffff",
+        weight: "bold",
+        size: "md",
+        wrap: true,
+        margin: "none"
+      },
+      {
+        type: "text",
+        text: resolveWorkoutTitle(workout.title),
+        color: "#ffffff",
+        weight: "bold",
+        size: "xl",
+        wrap: true,
+        margin: "sm"
+      }
+    ];
+
+    if (shouldShowWorkoutUser(workout)) {
+      headerContents.push({
+        type: "text",
+        text: workout.user.displayName,
+        color: "#FDF3EA",
+        size: "sm",
+        wrap: true,
+        margin: "sm"
+      });
+    }
+
     return {
       type: "bubble",
       size: "mega",
@@ -1434,25 +1510,15 @@
           backgroundColor: "#FFFFFF"
         },
         footer: {
-          backgroundColor: "#E92B2B"
+          backgroundColor: FLEX_THEME.footer
         }
       },
       header: {
         type: "box",
         layout: "vertical",
-        backgroundColor: "#E92B2B",
+        backgroundColor: FLEX_THEME.header,
         paddingAll: "12px",
-        contents: [
-          {
-            type: "text",
-            text: (workout.date || "-") + " " + (workout.title || "WorkOut"),
-            color: "#ffffff",
-            weight: "bold",
-            size: "lg",
-            wrap: true,
-            margin: "none"
-          }
-        ]
+        contents: headerContents
       },
       body: {
         type: "box",
@@ -1473,7 +1539,8 @@
             text: "Powered by " + (APP_CONFIG.APP_NAME || "Workout Share"),
             size: "xs",
             color: "#FFFFFF",
-            align: "center"
+            align: "center",
+            action: buildLiffFooterAction()
           }
         ]
       }
@@ -1488,7 +1555,7 @@
       margin: "sm",
       paddingAll: "10px",
       borderWidth: "2px",
-      borderColor: "#E24A4A",
+      borderColor: FLEX_THEME.border,
       cornerRadius: "12px",
       contents: [
         {
@@ -1517,9 +1584,9 @@
           ? [
               {
                 type: "text",
-                text: truncateText(exercise.memo, 46),
+                text: "メモ: " + truncateText(exercise.memo, 42),
                 size: "xs",
-                color: "#666666",
+                color: FLEX_THEME.textMuted,
                 wrap: true
               }
             ]
@@ -1547,11 +1614,7 @@
           },
           {
             type: "text",
-            text:
-              formatFlexWeight(set.weight) +
-              "  ×  " +
-              formatMetric(set.reps, "reps", 0) +
-              (isMaxRmSet ? "  (1RM:" + formatMetric(set.estimated1rm, "kg", 0) + ")" : ""),
+            text: formatFlexWeight(set.weight) + "  ×  " + formatMetric(set.reps, "reps", 0),
             size: "sm",
             wrap: true,
             flex: 6
@@ -1566,7 +1629,7 @@
                   paddingAll: "3px",
                   paddingStart: "6px",
                   paddingEnd: "6px",
-                  backgroundColor: "#E92B2B",
+                  backgroundColor: FLEX_THEME.accent,
                   cornerRadius: "2px",
                   contents: [
                     {
@@ -1597,13 +1660,44 @@
     return lines;
   }
 
+  function shouldShowWorkoutUser(workout) {
+    const displayName = workout && workout.user ? String(workout.user.displayName || "").trim() : "";
+    return Boolean(displayName) && displayName.toLowerCase() !== "anonymous";
+  }
+
+  function buildLiffFooterAction() {
+    const launchUrl = buildLiffLaunchUrl();
+    if (!launchUrl) {
+      return undefined;
+    }
+    return {
+      type: "uri",
+      label: "Open LIFF",
+      uri: launchUrl
+    };
+  }
+
+  function buildLiffLaunchUrl() {
+    const liffId = String(APP_CONFIG.LIFF_ID || "").trim();
+    if (!liffId || liffId === "YOUR_LIFF_ID") {
+      return "";
+    }
+    return "https://liff.line.me/" + liffId;
+  }
+
   function renderBubblePreview(workout, bubble, index) {
     const exerciseBoxes = bubble.body.contents;
+    const headerContents = bubble.header && bubble.header.contents ? bubble.header.contents : [];
+    const dateText = headerContents[0] ? headerContents[0].text : workout.date || "-";
+    const titleText = headerContents[1] ? headerContents[1].text : resolveWorkoutTitle(workout.title);
+    const userText = headerContents[2] ? headerContents[2].text : "";
     return [
       '<section class="preview-bubble">',
       '  <div class="preview-bubble-header">',
       "    <div>",
-      '      <div class="preview-bubble-title">' + escapeHtml((workout.date || "-") + " " + (workout.title || "WorkOut")) + "</div>",
+      '      <div class="preview-note">' + escapeHtml(dateText) + "</div>",
+      '      <div class="preview-bubble-title">' + escapeHtml(titleText) + "</div>",
+      userText ? '      <div class="preview-note">' + escapeHtml(userText) + "</div>" : "",
       "    </div>",
       '    <span class="badge">Bubble ' + (index + 1) + "</span>",
       "  </div>",
@@ -1623,7 +1717,10 @@
                 if (line.type === "box") {
                   const left = line.contents[0] ? line.contents[0].text : "";
                   const main = line.contents[1] ? line.contents[1].text : "";
-                  const badge = line.contents[2] ? line.contents[2].text : "";
+                  const badge =
+                    line.contents[2] && line.contents[2].contents && line.contents[2].contents[0]
+                      ? line.contents[2].contents[0].text
+                      : "";
                   return (
                     '<div class="preview-set-line"><span>' +
                     escapeHtml(left + " " + main) +
@@ -1640,6 +1737,9 @@
           ].join("");
         })
         .join(""),
+      '  <div class="preview-bubble-footer">' +
+        escapeHtml("Powered by " + (APP_CONFIG.APP_NAME || "Workout Share")) +
+        "</div>",
       "</section>"
     ].join("");
   }
@@ -1681,6 +1781,13 @@
       '  <strong class="summary-value">' + escapeHtml(value) + "</strong>",
       "</article>"
     ].join("");
+  }
+
+  function cssEscape(value) {
+    if (window.CSS && typeof window.CSS.escape === "function") {
+      return window.CSS.escape(String(value));
+    }
+    return String(value).replace(/["\\]/g, "\\$&");
   }
 
   function renderExercisePicker(exercise) {

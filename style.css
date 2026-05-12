@@ -547,6 +547,17 @@ button {
   white-space: nowrap;
 }
 
+.preview-bubble-footer {
+  margin-top: 14px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: var(--primary-dark);
+  color: #ffffff;
+  font-size: 0.84rem;
+  font-weight: 700;
+  text-align: center;
+}
+
 .history-card,
 .ranking-card {
   padding: 16px;
