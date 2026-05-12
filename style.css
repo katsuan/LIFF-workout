@@ -319,6 +319,13 @@ button {
   flex: 1;
 }
 
+.exercise-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  flex: 0 0 auto;
+}
+
 .exercise-title {
   margin: 0;
   font-size: 1.12rem;
@@ -358,7 +365,7 @@ button {
 .set-row-head {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-start;
   gap: 12px;
 }
 
@@ -401,12 +408,18 @@ button {
 .set-remove-button {
   min-height: 38px;
   padding: 8px 12px;
+  margin-left: 0;
 }
 
 .button-row {
   display: flex;
   flex-wrap: wrap;
   gap: 10px;
+}
+
+.utility-button-row {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
 .catalog-filter-row {
@@ -449,12 +462,42 @@ button {
   gap: 10px;
 }
 
+.exercise-content-shell,
+.selection-shell {
+  display: grid;
+  gap: 14px;
+  padding: 14px;
+  border-radius: 18px;
+}
+
+.exercise-content-shell {
+  background: linear-gradient(180deg, rgba(252, 249, 245, 0.94) 0%, rgba(255, 255, 255, 0.98) 100%);
+  border: 1px solid rgba(215, 224, 212, 0.92);
+}
+
+.selection-shell {
+  background: rgba(252, 243, 234, 0.6);
+  border: 1px dashed rgba(201, 106, 45, 0.28);
+}
+
 .compact-action-button .action-icon {
   display: none;
 }
 
 .compact-action-button .action-label {
   display: inline;
+}
+
+.utility-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+}
+
+.utility-button .action-icon {
+  color: currentColor;
 }
 
 .input-utility-card {
@@ -544,6 +587,13 @@ button {
 .summary-card small,
 .metric-label {
   color: var(--muted);
+  font-weight: 700;
+}
+
+.metric-caption {
+  margin-top: 4px;
+  color: var(--muted);
+  font-size: 0.82rem;
   font-weight: 700;
 }
 
@@ -978,5 +1028,21 @@ details.json-accordion summary::-webkit-details-marker {
 
   .input-utility-card .button-row {
     grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .utility-button .action-label,
+  .set-remove-button .action-label {
+    display: none;
+  }
+
+  .utility-button .action-icon,
+  .set-remove-button .action-icon {
+    display: inline;
+    font-size: 1rem;
+    line-height: 1;
+  }
+
+  .exercise-actions {
+    gap: 6px;
   }
 }

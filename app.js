@@ -646,11 +646,11 @@
       '    <div class="panel-head">',
       "      <div>",
       '        <h2 class="panel-title">送信内容</h2>',
-      "        <p>送信前の表示イメージです。最終的な見え方はLINE上で確認してください。</p>",
+      "        <p>LINEで共有される内容です。</p>",
       "      </div>",
       "    </div>",
       validation.valid
-        ? '<p class="preview-note">この内容で共有メッセージを生成できます。</p>'
+        ? '<p class="preview-note">入力内容がそのまま共有メッセージになります。</p>'
         : '<p class="preview-note">共有前に入力タブで不足項目を埋めてください。' +
         escapeHtml(validation.errors.join(" ")) +
         "</p>",
@@ -1350,9 +1350,30 @@
         escapeHtml(exerciseTitle) +
         "</h3>",
       "    </div>",
-      '    <button class="danger-button compact-action-button" aria-label="種目削除" title="種目削除" data-action="remove-exercise" data-exercise-id="' +
-        escapeHtml(exercise.exerciseId) +
-        '" type="button"><span class="action-label">種目削除</span><span class="action-icon" aria-hidden="true">🗑</span></button>',
+      '    <div class="exercise-actions">' +
+        (showExerciseFields
+          ? renderActionButton({
+              label: "編集",
+              icon: "✏️",
+              variant: "ghost-button compact-action-button",
+              action: "change-exercise-choice",
+              title: "種目変更",
+              attrs: {
+                "data-exercise-id": exercise.exerciseId
+              }
+            })
+          : "") +
+        renderActionButton({
+          label: "削除",
+          icon: "🗑",
+          variant: "danger-button compact-action-button",
+          action: "remove-exercise",
+          title: "種目削除",
+          attrs: {
+            "data-exercise-id": exercise.exerciseId
+          }
+        }) +
+        "</div>",
       "  </div>",
       '  <div class="form-grid">',
       !showExerciseFields
@@ -1365,21 +1386,17 @@
 
   function renderSelectedExerciseFields(exercise) {
     return [
-      '<div class="exercise-selected-head">',
-      '  <button class="ghost-button compact-action-button" aria-label="種目変更" title="種目変更" data-action="change-exercise-choice" data-exercise-id="' +
-      escapeHtml(exercise.exerciseId) +
-      '" type="button"><span class="action-label">種目変更</span><span class="action-icon" aria-hidden="true">✏️</span></button>',
-      "</div>",
+      '<div class="exercise-content-shell">',
       exercise.isCustom
         ? fieldTemplate({
-          label: "種目名",
-          input:
-            '<input class="text-input" data-exercise-field="name" data-exercise-id="' +
-            escapeHtml(exercise.exerciseId) +
-            '" type="text" placeholder="ベンチプレス / スクワット など" value="' +
-            escapeHtml(exercise.name || "") +
-            '" />'
-        })
+            label: "種目名",
+            input:
+              '<input class="text-input" data-exercise-field="name" data-exercise-id="' +
+              escapeHtml(exercise.exerciseId) +
+              '" type="text" placeholder="ベンチプレス / スクワット など" value="' +
+              escapeHtml(exercise.name || "") +
+              '" />'
+          })
         : "",
       '    <div class="sets-stack">',
       (exercise.sets || [])
@@ -1401,7 +1418,8 @@
           '" placeholder="フォームや調子のメモ">' +
           escapeHtml(exercise.memo || "") +
           "</textarea>"
-      })
+      }),
+      "</div>"
     ].join("");
   }
 
@@ -1420,11 +1438,17 @@
       '">' +
       escapeHtml(hasValidSet ? formatMetric(set.estimated1rm || 0, "kg", 1) : "-") +
       '</strong></div>',
-      '    <button class="danger-button set-remove-button" data-action="remove-set" data-exercise-id="' +
-      escapeHtml(exerciseId) +
-      '" data-set-id="' +
-      escapeHtml(set.setId) +
-      '" type="button">削除</button>',
+      renderActionButton({
+        label: "削除",
+        icon: "−",
+        variant: "danger-button compact-action-button set-remove-button",
+        action: "remove-set",
+        title: "セット削除",
+        attrs: {
+          "data-exercise-id": exerciseId,
+          "data-set-id": set.setId
+        }
+      }),
       "  </div>",
       '  <div class="set-fields">',
       '    <label class="inline-field">',
@@ -1503,17 +1527,7 @@
       '  <div class="preview-grid">',
       previewExercises
         .map(function (exercise) {
-          return [
-            '<article class="summary-card">',
-            "  <small>" + escapeHtml(exercise.name || "未入力種目") + "</small>",
-            '  <strong class="summary-value">' +
-            escapeHtml(formatMetric(exercise.maxEstimated1rm || 0, "kg", 1)) +
-            "</strong>",
-            '  <div class="history-meta">Max RM' +
-            (exercise.primaryMuscle ? " / " + escapeHtml(exercise.primaryMuscle) : "") +
-            "</div>",
-            "</article>"
-          ].join("");
+          return renderExerciseStatCard(exercise);
         })
         .join(""),
       "  </div>",
@@ -1525,10 +1539,25 @@
     return [
       '<div class="input-utility-card">',
       '  <div class="input-utility-title">操作</div>',
-      '  <div class="button-row">',
-      '    <button class="outline-button" data-action="open-history-input" type="button">履歴入力</button>',
-      '    <button class="pill-button" data-action="sample-workout" type="button">サンプル入力</button>',
-      '    <button class="danger-button" data-action="reset-workout" type="button">入力リセット</button>',
+      '  <div class="button-row utility-button-row">',
+      renderActionButton({
+        label: "履歴入力",
+        icon: "↺",
+        variant: "outline-button utility-button",
+        action: "open-history-input"
+      }),
+      renderActionButton({
+        label: "サンプル入力",
+        icon: "◎",
+        variant: "pill-button utility-button",
+        action: "sample-workout"
+      }),
+      renderActionButton({
+        label: "入力リセット",
+        icon: "×",
+        variant: "danger-button utility-button",
+        action: "reset-workout"
+      }),
       "  </div>",
       "</div>"
     ].join("");
@@ -1540,11 +1569,11 @@
       '  <div class="panel-head">',
       "    <div>",
       '      <p class="section-label">History Stats</p>',
-      '      <h2 class="panel-title">履歴とSTATS</h2>',
+      '      <h2 class="panel-title">履歴</h2>',
       "    </div>",
       '    <span class="badge">' + escapeHtml(String(appState.history.length)) + "件</span>",
       "  </div>",
-      '  <p class="preview-note">各履歴カードから種目ごとの MAX RM を確認できます。</p>',
+      '  <p class="preview-note">各履歴から種目ごとのセット数と MAX RM を見返せます。</p>',
       "</section>"
     ].join("");
   }
@@ -1566,12 +1595,24 @@
       "      <h4>" + escapeHtml(resolveWorkoutTitle(workout.title)) + "</h4>",
       "    </div>",
       '    <div class="history-actions history-actions-inline">',
-      '      <button class="pill-button compact-action-button" aria-label="再入力" title="再入力" data-action="restore-history" data-workout-id="' +
-        escapeHtml(workout.workoutId) +
-        '" type="button"><span class="action-label">再入力</span><span class="action-icon" aria-hidden="true">↺</span></button>',
-      '      <button class="danger-button compact-action-button" aria-label="履歴削除" title="履歴削除" data-action="delete-history" data-workout-id="' +
-        escapeHtml(workout.workoutId) +
-        '" type="button"><span class="action-label">履歴削除</span><span class="action-icon" aria-hidden="true">🗑</span></button>',
+      renderActionButton({
+        label: "再入力",
+        icon: "↺",
+        variant: "pill-button compact-action-button",
+        action: "restore-history",
+        attrs: {
+          "data-workout-id": workout.workoutId
+        }
+      }),
+      renderActionButton({
+        label: "履歴削除",
+        icon: "🗑",
+        variant: "danger-button compact-action-button",
+        action: "delete-history",
+        attrs: {
+          "data-workout-id": workout.workoutId
+        }
+      }),
       "    </div>",
       "  </div>",
       renderWorkoutExerciseStats(workout),
@@ -1593,14 +1634,7 @@
       '  <div class="preview-grid">',
       exercises
         .map(function (exercise) {
-          return [
-            '<article class="summary-card">',
-            "  <small>" + escapeHtml(exercise.name || "未入力種目") + "</small>",
-            '  <strong class="summary-value">' +
-            escapeHtml(formatMetric(exercise.maxEstimated1rm || 0, "kg", 1)) +
-            "</strong>",
-            "</article>"
-          ].join("");
+          return renderExerciseStatCard(exercise);
         })
         .join(""),
       "  </div>",
@@ -1926,13 +1960,55 @@
     ].join("");
   }
 
-  function renderSummaryCard(label, value) {
+  function renderExerciseStatCard(exercise) {
+    const validSetCount = (exercise.sets || []).filter(function (set) {
+      return isValidSetInput(toNullableNumber(set.weight), toNullableNumber(set.reps));
+    }).length;
+    const caption = [String(validSetCount) + "セット"];
+
+    if (exercise.primaryMuscle) {
+      caption.push(exercise.primaryMuscle);
+    }
+
     return [
       '<article class="summary-card">',
-      "  <small>" + escapeHtml(label) + "</small>",
-      '  <strong class="summary-value">' + escapeHtml(value) + "</strong>",
+      "  <small>" + escapeHtml(exercise.name || "未入力種目") + "</small>",
+      '  <strong class="summary-value">' +
+        escapeHtml(formatMetric(exercise.maxEstimated1rm || 0, "kg", 1)) +
+        "</strong>",
+      '  <div class="metric-caption">' + escapeHtml(caption.join(" / ")) + "</div>",
       "</article>"
     ].join("");
+  }
+
+  function renderActionButton(options) {
+    const attrs = Object.assign({}, options.attrs || {});
+    const attributeText = Object.keys(attrs)
+      .map(function (key) {
+        return " " + key + '="' + escapeHtml(String(attrs[key])) + '"';
+      })
+      .join("");
+
+    return (
+      '<button class="' +
+      escapeHtml(options.variant || "outline-button") +
+      '" aria-label="' +
+      escapeHtml(options.title || options.label) +
+      '" title="' +
+      escapeHtml(options.title || options.label) +
+      '" data-action="' +
+      escapeHtml(options.action || "") +
+      '"' +
+      attributeText +
+      ' type="button">' +
+      '<span class="action-label">' +
+      escapeHtml(options.label || "") +
+      "</span>" +
+      (options.icon
+        ? '<span class="action-icon" aria-hidden="true">' + escapeHtml(options.icon) + "</span>"
+        : "") +
+      "</button>"
+    );
   }
 
   function cssEscape(value) {
@@ -1989,7 +2065,7 @@
         : '<div class="empty-state compact">先に部位を選ぶと、候補の種目が表示されます。</div>';
 
     return [
-      '<div class="exercise-picker">',
+      '<div class="exercise-picker selection-shell">',
       '  <div class="field-group">',
       '    <span class="field-label">1. 部位を選択</span>',
       '    <div class="catalog-filter-row">' + muscleButtons + "</div>",
@@ -2003,54 +2079,6 @@
         '" type="button">候補にない種目を入力</button></div>'
         : "",
       "  </div>",
-      "</div>"
-    ].join("");
-  }
-
-  function renderCatalogFilterButtons() {
-    return [
-      '<div class="catalog-filter-row">',
-      MUSCLE_FILTERS.map(function (muscle) {
-        const isActive = appState.ui.catalogFilter === muscle;
-        const label = muscle === "all" ? "すべて" : muscle;
-        return (
-          '<button class="catalog-chip' +
-          (isActive ? " is-active" : "") +
-          '" data-action="change-muscle-filter" data-muscle="' +
-          escapeHtml(muscle) +
-          '" type="button">' +
-          escapeHtml(label) +
-          "</button>"
-        );
-      }).join(""),
-      "</div>"
-    ].join("");
-  }
-
-  function renderQuickExerciseButtons(items) {
-    if (!items.length) {
-      return '<div class="empty-state compact">一致する種目がありません。</div>';
-    }
-
-    return [
-      '<div class="quick-exercise-grid">',
-      items
-        .slice(0, 10)
-        .map(function (item) {
-          return (
-            '<button class="quick-exercise-button" data-action="add-quick-exercise" data-catalog-id="' +
-            escapeHtml(item.id) +
-            '" type="button">' +
-            '<strong>' +
-            escapeHtml(item.name) +
-            "</strong>" +
-            '<span>' +
-            escapeHtml(item.muscle) +
-            "</span>" +
-            "</button>"
-          );
-        })
-        .join(""),
       "</div>"
     ].join("");
   }
