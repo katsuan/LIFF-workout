@@ -271,7 +271,7 @@
     renderInput();
     renderPreview();
     renderShell();
-    scrollToPanel("input");
+    scrollToExerciseCard(exercise.exerciseId);
   }
 
   function removeExercise(exerciseId) {
@@ -598,11 +598,7 @@
       '<div class="input-stack">',
       '  <section class="panel-card">',
       '    <div class="panel-head">',
-      "      <div>",
-      '        <h2 class="panel-title">記録を入力</h2>',
-      "        <p>ここで入力した日付とタイトルが共有カードの先頭に表示されます。</p>",
-      "      </div>",
-      '      <span class="badge">' + escapeHtml(String(workout.exercises.length)) + '種目</span>',
+      '      <h2 class="panel-title">記録入力</h2>',
       "    </div>",
       '    <div class="form-grid two-col">',
       fieldTemplate({
@@ -623,7 +619,7 @@
       '    <p class="helper-text">空セット、重量未入力、回数未入力のセットは共有内容から自動除外されます。</p>',
       '    <div class="button-row">',
       '      <button class="pill-button" data-action="sample-workout" type="button">サンプル入力</button>',
-      '      <button class="outline-button" data-action="reset-workout" type="button">入力リセット</button>',
+      '      <button class="danger-button" data-action="reset-workout" type="button">入力リセット</button>',
       "    </div>",
       "  </section>",
       workout.exercises
@@ -1167,6 +1163,27 @@
     });
   }
 
+  function scrollToExerciseCard(exerciseId) {
+    if (!exerciseId) {
+      scrollToPanel("input");
+      return;
+    }
+
+    window.requestAnimationFrame(function () {
+      const target = document.querySelector(
+        '[data-exercise-card-id="' + cssEscape(exerciseId) + '"]'
+      );
+      if (!target || typeof target.scrollIntoView !== "function") {
+        scrollToPanel("input");
+        return;
+      }
+      target.scrollIntoView({
+        behavior: "smooth",
+        block: "start"
+      });
+    });
+  }
+
   function syncWorkoutUser() {
     appState.workout.user = Object.assign({}, DEFAULT_USER, appState.liff.profile || {});
     appState.workout.groupKey = resolveGroupKey();
@@ -1291,15 +1308,16 @@
     const showExerciseFields = Boolean(exercise.catalogId || exercise.isCustom);
 
     return [
-      '<section class="exercise-card">',
+      '<section class="exercise-card" data-exercise-card-id="' +
+        escapeHtml(exercise.exerciseId) +
+        '">',
       '  <div class="exercise-header">',
       "    <div>",
-      '      <p class="section-label">エクササイズ ' + (exerciseIndex + 1) + "</p>",
       '      <h3 class="exercise-title">' +
         escapeHtml(exercise.name || "種目を選択") +
         "</h3>",
-      exercise.primaryMuscle
-        ? '      <p class="exercise-meta">' + escapeHtml(exercise.primaryMuscle) + "</p>"
+      !showExerciseFields
+        ? '      <p class="exercise-meta">エクササイズ ' + (exerciseIndex + 1) + "</p>"
         : "",
       "    </div>",
       '    <button class="danger-button" data-action="remove-exercise" data-exercise-id="' +
@@ -1309,46 +1327,54 @@
       '  <div class="form-grid">',
       !showExerciseFields
         ? renderExercisePicker(exercise)
-        : [
-            '<div class="exercise-selected-head">',
-            '  <div class="badge">' + escapeHtml(exercise.primaryMuscle || "種目") + "</div>",
-            '  <button class="ghost-button" data-action="change-exercise-choice" data-exercise-id="' +
-              escapeHtml(exercise.exerciseId) +
-              '" type="button">種目を変更</button>',
-            "</div>",
-            fieldTemplate({
-              label: "表示名",
-              input:
-                '<input class="text-input" data-exercise-field="name" data-exercise-id="' +
-                escapeHtml(exercise.exerciseId) +
-                '" type="text" placeholder="ベンチプレス / スクワット など" value="' +
-                escapeHtml(exercise.name || "") +
-                '" />'
-            }),
-            '    <div class="sets-stack">',
-            (exercise.sets || [])
-              .map(function (set, setIndex) {
-                return renderSetRow(exercise.exerciseId, set, setIndex);
-              })
-              .join(""),
-            "    </div>",
-            '    <div class="button-row">',
-            '      <button class="mini-button" data-action="add-set" data-exercise-id="' +
-              escapeHtml(exercise.exerciseId) +
-              '" type="button">セット追加</button>',
-            "    </div>",
-            fieldTemplate({
-              label: "種目メモ",
-              input:
-                '<textarea class="textarea-input" data-exercise-field="memo" data-exercise-id="' +
-                escapeHtml(exercise.exerciseId) +
-                '" placeholder="フォームや調子のメモ">' +
-                escapeHtml(exercise.memo || "") +
-                "</textarea>"
-            })
-          ].join(""),
+        : renderSelectedExerciseFields(exercise),
       "  </div>",
       "</section>"
+    ].join("");
+  }
+
+  function renderSelectedExerciseFields(exercise) {
+    return [
+      '<div class="exercise-selected-head">',
+      exercise.isCustom && exercise.primaryMuscle
+        ? '  <div class="exercise-meta">部位: ' + escapeHtml(exercise.primaryMuscle) + "</div>"
+        : '  <div class="exercise-meta">セットとメモを入力</div>',
+      '  <button class="ghost-button" data-action="change-exercise-choice" data-exercise-id="' +
+        escapeHtml(exercise.exerciseId) +
+        '" type="button">種目を変更</button>',
+      "</div>",
+      exercise.isCustom
+        ? fieldTemplate({
+            label: "種目名",
+            input:
+              '<input class="text-input" data-exercise-field="name" data-exercise-id="' +
+              escapeHtml(exercise.exerciseId) +
+              '" type="text" placeholder="ベンチプレス / スクワット など" value="' +
+              escapeHtml(exercise.name || "") +
+              '" />'
+          })
+        : "",
+      '    <div class="sets-stack">',
+      (exercise.sets || [])
+        .map(function (set, setIndex) {
+          return renderSetRow(exercise.exerciseId, set, setIndex);
+        })
+        .join(""),
+      "    </div>",
+      '    <div class="button-row">',
+      '      <button class="mini-button" data-action="add-set" data-exercise-id="' +
+        escapeHtml(exercise.exerciseId) +
+        '" type="button">セット追加</button>',
+      "    </div>",
+      fieldTemplate({
+        label: "種目メモ",
+        input:
+          '<textarea class="textarea-input" data-exercise-field="memo" data-exercise-id="' +
+          escapeHtml(exercise.exerciseId) +
+          '" placeholder="フォームや調子のメモ">' +
+          escapeHtml(exercise.memo || "") +
+          "</textarea>"
+      })
     ].join("");
   }
 
