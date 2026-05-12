@@ -1517,12 +1517,48 @@
       renderSummaryCard("最大RM", formatMetric(findWorkoutMax1rm(workout), "kg", 1)),
       renderSummaryCard("日付", workout.date || "-"),
       "  </div>",
+      renderWorkoutExerciseStats(workout, resolveWorkoutTitle(workout.title)),
       '  <div class="history-actions history-actions-end">',
       '    <button class="danger-button" data-action="delete-history" data-workout-id="' +
         escapeHtml(workout.workoutId) +
         '" type="button">履歴削除</button>',
       "  </div>",
       "</article>"
+    ].join("");
+  }
+
+  function renderWorkoutExerciseStats(workout, title) {
+    const exercises = (workout.exercises || []).filter(function (exercise) {
+      return Boolean((exercise.name || "").trim());
+    });
+
+    if (!exercises.length) {
+      return "";
+    }
+
+    return [
+      '<section class="workout-stats-section">',
+      '  <div class="panel-head compact">',
+      "    <div>",
+      '      <p class="section-label">' + escapeHtml(title) + "</p>",
+      '      <h4 class="panel-title">種目・MAXRM</h4>',
+      "    </div>",
+      "  </div>",
+      '  <div class="preview-grid">',
+      exercises
+        .map(function (exercise) {
+          return [
+            '<article class="summary-card">',
+            "  <small>" + escapeHtml(exercise.name || "未入力種目") + "</small>",
+            '  <strong class="summary-value">' +
+              escapeHtml(formatMetric(exercise.maxEstimated1rm || 0, "kg", 1)) +
+              "</strong>",
+            "</article>"
+          ].join("");
+        })
+        .join(""),
+      "  </div>",
+      "</section>"
     ].join("");
   }
 
@@ -1750,7 +1786,7 @@
     const userText = headerContents[2] ? headerContents[2].text : "";
     return [
       '<section class="preview-bubble">',
-      '  <div class="preview-bubble-header">',
+      '  <div class="preview-bubble-header preview-bubble-header-themed">',
       "    <div>",
       '      <div class="preview-note">' + escapeHtml(dateText) + "</div>",
       '      <div class="preview-bubble-title">' + escapeHtml(titleText) + "</div>",
@@ -1762,13 +1798,15 @@
           const headerBox = box.contents[0] || { contents: [] };
           const title = headerBox.contents[0] ? headerBox.contents[0].text : "";
           const summary = headerBox.contents[1] ? headerBox.contents[1].text : "";
-          const setLines = box.contents.slice(1);
+          const bodyLines = box.contents.slice(1);
           return [
-            '<article class="preview-exercise">',
-            "  <h4>" + escapeHtml(title) + "</h4>",
-            '  <p class="exercise-meta">' + escapeHtml(summary) + "</p>",
+            '<article class="preview-exercise preview-exercise-card">',
+            '  <div class="preview-exercise-head">',
+            "    <h4>" + escapeHtml(title) + "</h4>",
+            '    <span class="preview-exercise-rm">' + escapeHtml(summary) + "</span>",
+            "  </div>",
             '  <div class="preview-sets">',
-            setLines
+            bodyLines
               .map(function (line) {
                 if (line.type === "box") {
                   const left = line.contents[0] ? line.contents[0].text : "";
@@ -1785,7 +1823,7 @@
                     "</div>"
                   );
                 }
-                return '<div class="preview-set-line"><span>' + escapeHtml(line.text || "") + "</span></div>";
+                return '<div class="preview-exercise-note">' + escapeHtml(line.text || "") + "</div>";
               })
               .join(""),
             "  </div>",

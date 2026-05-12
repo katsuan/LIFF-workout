@@ -200,6 +200,10 @@ button {
   gap: 12px;
 }
 
+.panel-head.compact {
+  margin-bottom: 10px;
+}
+
 .panel-head p {
   margin: 4px 0 0;
   color: var(--muted);
@@ -515,6 +519,18 @@ button {
   margin-bottom: 16px;
 }
 
+.preview-bubble-header-themed {
+  margin: -18px -18px 16px;
+  padding: 16px 18px;
+  border-radius: 22px 22px 14px 14px;
+  background: linear-gradient(135deg, var(--primary) 0%, #d8854f 100%);
+}
+
+.preview-bubble-header-themed .preview-note,
+.preview-bubble-header-themed .preview-bubble-title {
+  color: #ffffff;
+}
+
 .preview-bubble-title {
   font-size: 1.05rem;
   font-weight: 800;
@@ -525,15 +541,40 @@ button {
   border-top: 1px solid var(--line);
 }
 
+.preview-exercise-card {
+  padding: 12px;
+  border: 2px solid var(--share);
+  border-radius: 16px;
+  background: #ffffff;
+}
+
 .preview-exercise:first-child {
   border-top: 0;
   padding-top: 0;
+}
+
+.preview-exercise-card:first-child {
+  padding-top: 12px;
 }
 
 .preview-exercise h4,
 .history-card h4,
 .ranking-card h4 {
   margin: 0 0 6px;
+}
+
+.preview-exercise-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.preview-exercise-rm {
+  color: var(--secondary);
+  font-size: 0.95rem;
+  font-weight: 700;
+  white-space: nowrap;
 }
 
 .preview-sets {
@@ -612,6 +653,16 @@ button {
 
 .history-actions-end .danger-button {
   flex: 0 0 auto;
+}
+
+.workout-stats-section {
+  margin-top: 14px;
+}
+
+.preview-exercise-note {
+  color: var(--muted);
+  font-size: 0.88rem;
+  line-height: 1.5;
 }
 
 .ranking-tabs {
