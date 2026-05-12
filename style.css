@@ -108,14 +108,41 @@ button {
 
 .status-panel {
   display: none;
-  margin-bottom: 14px;
-  padding: 14px 16px;
+  position: fixed;
+  left: 12px;
+  right: 12px;
+  bottom: calc(92px + env(safe-area-inset-bottom));
+  z-index: 30;
+  padding: 0;
   border-radius: var(--radius-md);
   font-weight: 600;
+  box-shadow: 0 16px 34px rgba(31, 42, 31, 0.14);
 }
 
 .status-panel.is-visible {
   display: block;
+}
+
+.status-panel-inner {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 14px 16px;
+}
+
+.status-panel-text {
+  flex: 1;
+}
+
+.status-close-button {
+  min-width: 36px;
+  min-height: 36px;
+  border: 0;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.5);
+  color: inherit;
+  font-size: 1rem;
+  font-weight: 800;
 }
 
 .status-panel.info {
@@ -410,6 +437,11 @@ button {
   gap: 10px;
 }
 
+.selection-grid .quick-exercise-button {
+  min-height: 62px;
+  border-style: dashed;
+}
+
 .exercise-selected-head {
   display: flex;
   align-items: center;
@@ -521,12 +553,8 @@ button {
 
 .preview-bubble {
   padding: 18px;
-  border: 2px solid var(--share);
+  border: 2px solid var(--primary);
   background: #ffffff;
-}
-
-.preview-host-card {
-  gap: 14px;
 }
 
 .preview-bubble-header {
@@ -639,7 +667,7 @@ button {
   margin-top: 14px;
   padding: 10px 12px;
   border-radius: 12px;
-  background: var(--primary-dark);
+  background: var(--primary);
   color: #ffffff;
   font-size: 0.84rem;
   font-weight: 700;
@@ -946,5 +974,9 @@ details.json-accordion summary::-webkit-details-marker {
   .history-actions-inline {
     display: flex;
     grid-template-columns: none;
+  }
+
+  .input-utility-card .button-row {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 }

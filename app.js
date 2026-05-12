@@ -22,9 +22,9 @@
   const MAX_EXERCISES_PER_BUBBLE = 6;
   const FLEX_THEME = {
     header: "#C96A2D",
-    footer: "#8F4517",
+    footer: "#C96A2D",
     border: "#D68452",
-    accent: "#8F4517",
+    accent: "#E92B2B",
     accentSoft: "#F7DFCF",
     textMuted: "#6F5A4A"
   };
@@ -74,7 +74,8 @@
     ui: {
       openJsonPreview: false,
       catalogFilter: "all",
-      catalogQuery: ""
+      catalogQuery: "",
+      suppressScrollSpyUntil: 0
     },
     liff: {
       initialized: false,
@@ -170,6 +171,8 @@
     document.addEventListener("click", handleClick);
     document.addEventListener("input", handleInput);
     document.addEventListener("change", handleInput);
+    window.addEventListener("scroll", syncActiveTabToScroll, { passive: true });
+    window.addEventListener("resize", syncActiveTabToScroll);
   }
 
   async function initLiff() {
@@ -616,7 +619,6 @@
           '" />'
       }),
       "    </div>",
-      '    <p class="helper-text">空セット、重量未入力、回数未入力のセットは共有内容から自動除外されます。</p>',
       renderInputUtilityActions(),
       "  </section>",
       workout.exercises
@@ -644,7 +646,7 @@
       '    <div class="panel-head">',
       "      <div>",
       '        <h2 class="panel-title">送信内容</h2>',
-      "        <p>生成されるメッセージ内容の確認用です。最終的な表示はLINE上で確認してください。</p>",
+      "        <p>送信前の表示イメージです。最終的な見え方はLINE上で確認してください。</p>",
       "      </div>",
       "    </div>",
       validation.valid
@@ -870,6 +872,9 @@
     }
 
     switch (action) {
+      case "close-status":
+        clearStatus();
+        break;
       case "open-history-input":
         setActiveTab("history");
         break;
@@ -1070,17 +1075,28 @@
   function renderStatus() {
     if (!appState.status.message) {
       elements.statusPanel.className = "status-panel";
-      elements.statusPanel.textContent = "";
+      elements.statusPanel.innerHTML = "";
       return;
     }
 
     elements.statusPanel.className = "status-panel is-visible " + appState.status.type;
-    elements.statusPanel.textContent = appState.status.message;
+    elements.statusPanel.innerHTML = [
+      '<div class="status-panel-inner">',
+      '  <div class="status-panel-text">' + escapeHtml(appState.status.message) + "</div>",
+      '  <button class="status-close-button" data-action="close-status" type="button" aria-label="閉じる">×</button>',
+      "</div>"
+    ].join("");
   }
 
   function setStatus(message, type) {
     appState.status.message = message;
     appState.status.type = type || "info";
+    renderStatus();
+  }
+
+  function clearStatus() {
+    appState.status.message = "";
+    appState.status.type = "info";
     renderStatus();
   }
 
@@ -1096,6 +1112,7 @@
     if (tab !== "preview") {
       appState.ui.openJsonPreview = false;
     }
+    appState.ui.suppressScrollSpyUntil = Date.now() + 900;
     renderActiveTab();
     renderShell();
     scrollToPanel(tab);
@@ -1126,6 +1143,7 @@
     if (!panel || panel.hidden || typeof panel.scrollIntoView !== "function") {
       return;
     }
+    appState.ui.suppressScrollSpyUntil = Date.now() + 900;
     window.requestAnimationFrame(function () {
       panel.scrollIntoView({
         behavior: "smooth",
@@ -1140,6 +1158,7 @@
       return;
     }
 
+    appState.ui.suppressScrollSpyUntil = Date.now() + 900;
     window.requestAnimationFrame(function () {
       const target = document.querySelector(
         '[data-exercise-card-id="' + cssEscape(exerciseId) + '"]'
@@ -1153,6 +1172,45 @@
         block: "start"
       });
     });
+  }
+
+  function syncActiveTabToScroll() {
+    if (Date.now() < Number(appState.ui.suppressScrollSpyUntil || 0)) {
+      return;
+    }
+
+    const candidates = [
+      { tab: "input", element: elements.tabInput },
+      { tab: "preview", element: elements.tabPreview },
+      { tab: "history", element: elements.tabHistory }
+    ].filter(function (item) {
+      return item.element && !item.element.hidden;
+    });
+
+    if (!candidates.length) {
+      return;
+    }
+
+    const threshold = 128;
+    let active = candidates[0].tab;
+    let bestDistance = Number.POSITIVE_INFINITY;
+
+    candidates.forEach(function (item) {
+      const rect = item.element.getBoundingClientRect();
+      const distance = Math.abs(rect.top - threshold);
+      if (rect.top <= threshold && distance <= bestDistance) {
+        bestDistance = distance;
+        active = item.tab;
+      } else if (bestDistance === Number.POSITIVE_INFINITY && distance < bestDistance) {
+        bestDistance = distance;
+        active = item.tab;
+      }
+    });
+
+    if (active !== appState.activeTab) {
+      appState.activeTab = active;
+      renderShell();
+    }
   }
 
   function syncWorkoutUser() {
@@ -1283,20 +1341,18 @@
 
     return [
       '<section class="exercise-card" data-exercise-card-id="' +
-      escapeHtml(exercise.exerciseId) +
-      '">',
+        escapeHtml(exercise.exerciseId) +
+        '">',
       '  <div class="exercise-header">',
       "    <div>",
+      '      <p class="section-label">エクササイズ ' + (exerciseIndex + 1) + "</p>",
       '      <h3 class="exercise-title">' +
-      escapeHtml(exerciseTitle) +
-      "</h3>",
-      !showExerciseFields
-        ? '      <p class="exercise-meta">エクササイズ ' + (exerciseIndex + 1) + "</p>"
-        : "",
+        escapeHtml(exerciseTitle) +
+        "</h3>",
       "    </div>",
       '    <button class="danger-button compact-action-button" aria-label="種目削除" title="種目削除" data-action="remove-exercise" data-exercise-id="' +
-      escapeHtml(exercise.exerciseId) +
-      '" type="button"><span class="action-label">種目削除</span><span class="action-icon" aria-hidden="true">🗑</span></button>',
+        escapeHtml(exercise.exerciseId) +
+        '" type="button"><span class="action-label">種目削除</span><span class="action-icon" aria-hidden="true">🗑</span></button>',
       "  </div>",
       '  <div class="form-grid">',
       !showExerciseFields
@@ -1468,7 +1524,7 @@
   function renderInputUtilityActions() {
     return [
       '<div class="input-utility-card">',
-      '  <div class="input-utility-title">設定</div>',
+      '  <div class="input-utility-title">操作</div>',
       '  <div class="button-row">',
       '    <button class="outline-button" data-action="open-history-input" type="button">履歴入力</button>',
       '    <button class="pill-button" data-action="sample-workout" type="button">サンプル入力</button>',
@@ -1499,19 +1555,23 @@
       '  <div class="history-card-head">',
       '    <div class="history-card-copy">',
       '      <p class="history-meta history-meta-inline">' +
-      escapeHtml(workout.date || "-") +
-      " ・ " +
-      escapeHtml(String((workout.exercises || []).length)) +
-      "種目</p>",
+        escapeHtml(workout.date || "-") +
+        " ・ " +
+        escapeHtml(String((workout.exercises || []).length)) +
+        "種目 ・ " +
+        escapeHtml(String(countValidSets(workout))) +
+        "セット ・ MAX RM " +
+        escapeHtml(formatMetric(findWorkoutMax1rm(workout), "kg", 1)) +
+        "</p>",
       "      <h4>" + escapeHtml(resolveWorkoutTitle(workout.title)) + "</h4>",
       "    </div>",
       '    <div class="history-actions history-actions-inline">',
-      '      <button class="pill-button" data-action="restore-history" data-workout-id="' +
-      escapeHtml(workout.workoutId) +
-      '" type="button">再入力</button>',
-      '      <button class="danger-button" data-action="delete-history" data-workout-id="' +
-      escapeHtml(workout.workoutId) +
-      '" type="button">履歴削除</button>',
+      '      <button class="pill-button compact-action-button" aria-label="再入力" title="再入力" data-action="restore-history" data-workout-id="' +
+        escapeHtml(workout.workoutId) +
+        '" type="button"><span class="action-label">再入力</span><span class="action-icon" aria-hidden="true">↺</span></button>',
+      '      <button class="danger-button compact-action-button" aria-label="履歴削除" title="履歴削除" data-action="delete-history" data-workout-id="' +
+        escapeHtml(workout.workoutId) +
+        '" type="button"><span class="action-label">履歴削除</span><span class="action-icon" aria-hidden="true">🗑</span></button>',
       "    </div>",
       "  </div>",
       renderWorkoutExerciseStats(workout),
@@ -1614,20 +1674,9 @@
         layout: "vertical",
         paddingAll: "8px",
         spacing: "sm",
-        contents: [
-          {
-            type: "box",
-            layout: "vertical",
-            paddingAll: "10px",
-            borderWidth: "2px",
-            borderColor: "#06C755",
-            cornerRadius: "16px",
-            spacing: "sm",
-            contents: exercises.map(function (exercise) {
-              return buildExerciseBoxForFlex(exercise);
-            })
-          }
-        ]
+        contents: exercises.map(function (exercise) {
+          return buildExerciseBoxForFlex(exercise);
+        })
       },
       footer: {
         type: "box",
@@ -1682,9 +1731,9 @@
       ].concat(buildSetLinesForFlex(exercise)).concat(
         exercise.memo
           ? [
-            {
-              type: "text",
-              text: truncateText(exercise.memo, 42),
+              {
+                type: "text",
+                text: truncateText(exercise.memo, 42),
               size: "xs",
               color: FLEX_THEME.textMuted,
               wrap: true
@@ -1729,7 +1778,7 @@
                 paddingAll: "3px",
                 paddingStart: "6px",
                 paddingEnd: "6px",
-                backgroundColor: FLEX_THEME.accent,
+                  backgroundColor: FLEX_THEME.accent,
                 cornerRadius: "2px",
                 contents: [
                   {
@@ -1786,9 +1835,7 @@
   }
 
   function renderBubblePreview(workout, bubble, index) {
-    const bodyWrapper =
-      bubble.body && bubble.body.contents && bubble.body.contents[0] ? bubble.body.contents[0] : null;
-    const exerciseBoxes = bodyWrapper && bodyWrapper.contents ? bodyWrapper.contents : [];
+    const exerciseBoxes = bubble.body && bubble.body.contents ? bubble.body.contents : [];
     const headerContents = bubble.header && bubble.header.contents ? bubble.header.contents : [];
     const headerMetaBox = headerContents[0] && headerContents[0].contents ? headerContents[0] : null;
     const dateText = headerMetaBox && headerMetaBox.contents[0] ? headerMetaBox.contents[0].text : workout.date || "-";
@@ -1949,7 +1996,7 @@
       "  </div>",
       '  <div class="field-group">',
       '    <span class="field-label">2. 種目を選択</span>',
-      '    <div class="quick-exercise-grid">' + exerciseCards + "</div>",
+      '    <div class="quick-exercise-grid selection-grid">' + exerciseCards + "</div>",
       exercise.selectionMuscle
         ? '    <div class="button-row"><button class="ghost-button" data-action="start-custom-exercise" data-exercise-id="' +
         escapeHtml(exercise.exerciseId) +
