@@ -1,10 +1,12 @@
 window.APP_CONFIG = {
   LIFF_ID: "2009927582-2isjfmkk",
-  APP_NAME: "LIFF Workout Share",
+  APP_NAME: "Workout Share",
   DEFAULT_GROUP_KEY: "default-group",
   FEATURE_FLAGS: {
+    enableDebugMode: false,
     enableLocalHistory: true,
-    enableStatsMock: true,
-    enableApiAdapter: false
+    enableStatsMock: false,
+    enableApiAdapter: false,
+    enableRanking: false
   }
 };

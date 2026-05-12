@@ -4,9 +4,11 @@
   const APP_CONFIG = window.APP_CONFIG || {};
   const FEATURE_FLAGS = Object.assign(
     {
+      enableDebugMode: false,
       enableLocalHistory: true,
       enableStatsMock: true,
-      enableApiAdapter: false
+      enableApiAdapter: false,
+      enableRanking: false
     },
     APP_CONFIG.FEATURE_FLAGS || {}
   );
@@ -52,24 +54,38 @@
 
   document.addEventListener("DOMContentLoaded", initApp);
 
+  function isDebugModeEnabled() {
+    return Boolean(FEATURE_FLAGS.enableDebugMode);
+  }
+
+  function isRankingEnabled() {
+    return isDebugModeEnabled() && Boolean(FEATURE_FLAGS.enableRanking);
+  }
+
   async function initApp() {
     cacheElements();
     bindEvents();
 
     appState.workout = createEmptyWorkout();
     appState.history = loadWorkoutHistory();
-    appState.rankingData = await getRanking();
+    if (isRankingEnabled()) {
+      appState.rankingData = await getRanking();
+    }
 
     renderShell();
     renderInput();
     renderPreview();
     renderHistory();
-    renderRanking();
+    if (isRankingEnabled()) {
+      renderRanking();
+    }
 
     const liffResult = await initLiff();
     if (!liffResult.ready) {
       setStatus(
-        "LIFF未初期化のため、プレビュー専用モードで起動しました。LINE共有が使えない場合は Flex JSON コピーを利用できます。",
+        isDebugModeEnabled()
+          ? "LIFF未初期化のため、プレビュー専用モードで起動しました。デバッグ用にFlex JSON確認が利用できます。"
+          : "LIFF未初期化のため、プレビュー専用モードで起動しました。LINE共有はLIFF環境で利用してください。",
         "warn"
       );
     } else {
@@ -87,11 +103,14 @@
     elements.liffModeChip = document.getElementById("liff-mode-chip");
     elements.heroStats = document.getElementById("hero-stats");
     elements.statusPanel = document.getElementById("status-panel");
+    elements.tabNav = document.getElementById("tab-nav");
     elements.tabButtons = Array.from(document.querySelectorAll(".tab-button"));
     elements.tabInput = document.getElementById("tab-input");
     elements.tabPreview = document.getElementById("tab-preview");
     elements.tabHistory = document.getElementById("tab-history");
     elements.tabRanking = document.getElementById("tab-ranking");
+    elements.tabRankingButton = document.getElementById("tab-button-ranking");
+    elements.actionBar = document.getElementById("action-bar");
     elements.addExerciseButton = document.getElementById("add-exercise-button");
     elements.previewButton = document.getElementById("preview-button");
     elements.copyJsonButton = document.getElementById("copy-json-button");
@@ -391,20 +410,24 @@
 
     if (!appState.liff.ready || !appState.liff.shareAvailable) {
       appState.activeTab = "preview";
-      appState.ui.openJsonPreview = true;
+      appState.ui.openJsonPreview = isDebugModeEnabled();
       renderShell();
       renderPreview();
-      const copied = await copyText(JSON.stringify(message, null, 2));
-      if (copied) {
-        setStatus(
-          "shareTargetPicker が使えないため、Flex JSON をコピーしました。プレビューから内容を確認できます。",
-          "warn"
-        );
+      if (isDebugModeEnabled()) {
+        const copied = await copyText(JSON.stringify(message, null, 2));
+        if (copied) {
+          setStatus(
+            "shareTargetPicker が使えないため、デバッグ用に Flex JSON をコピーしました。",
+            "warn"
+          );
+        } else {
+          setStatus(
+            "shareTargetPicker が使えないため、デバッグ用に Flex JSON プレビューを表示しています。",
+            "warn"
+          );
+        }
       } else {
-        setStatus(
-          "shareTargetPicker が使えないため、プレビュータブに Flex JSON を表示しました。手動でコピーしてください。",
-          "warn"
-        );
+        setStatus("この環境ではLINE共有を実行できません。LINEアプリ内のLIFFから開いてください。", "warn");
       }
       return;
     }
@@ -419,11 +442,13 @@
     } catch (error) {
       console.error("shareTargetPicker failed:", error);
       appState.activeTab = "preview";
-      appState.ui.openJsonPreview = true;
+      appState.ui.openJsonPreview = isDebugModeEnabled();
       renderShell();
       renderPreview();
       setStatus(
-        "LINE共有でエラーが発生しました。Flex JSON プレビューへ切り替えています。",
+        isDebugModeEnabled()
+          ? "LINE共有でエラーが発生しました。デバッグ用にFlex JSONプレビューへ切り替えています。"
+          : "LINE共有でエラーが発生しました。時間をおいて再度お試しください。",
         "error"
       );
     }
@@ -501,7 +526,7 @@
       "      <div>",
       '        <p class="section-label">Flex Preview</p>',
       '        <h2 class="panel-title">プレビュータブ</h2>',
-      "        <p>共有前にボリューム、推定1RM、Flex JSON を確認できます。</p>",
+      "        <p>共有前にボリューム、推定1RM、見た目のまとまりを確認できます。</p>",
       "      </div>",
       '      <span class="badge">' +
         escapeHtml(bubbles.length === 1 ? "bubble" : "carousel " + bubbles.length + "件") +
@@ -525,13 +550,19 @@
           return renderBubblePreview(shareableWorkout, bubble, index);
         })
         .join(""),
-      '<section class="panel-card">',
-      '  <details class="json-accordion" ' + (appState.ui.openJsonPreview ? "open" : "") + '>',
-      "    <summary>Flex JSON プレビュー</summary>",
-      '    <p class="json-hint">shareTargetPicker が使えない環境では、このJSONをコピーして確認できます。</p>',
-      '    <pre class="json-preview">' + escapeHtml(JSON.stringify(flexMessage, null, 2)) + "</pre>",
-      "  </details>",
-      "</section>",
+      isDebugModeEnabled()
+        ? '<section class="panel-card">' +
+          '  <details class="json-accordion" ' +
+          (appState.ui.openJsonPreview ? "open" : "") +
+          ">" +
+          "    <summary>Flex JSON プレビュー</summary>" +
+          '    <p class="json-hint">デバッグ用のFlex JSON確認です。</p>' +
+          '    <pre class="json-preview">' +
+          escapeHtml(JSON.stringify(flexMessage, null, 2)) +
+          "</pre>" +
+          "  </details>" +
+          "</section>"
+        : "",
       "</div>"
     ].join("");
 
@@ -589,6 +620,10 @@
   }
 
   function renderRanking() {
+    if (!isRankingEnabled() || !elements.tabRanking) {
+      return;
+    }
+
     if (!appState.rankingData) {
       elements.tabRanking.innerHTML = '<div class="empty-state">ランキングを読み込み中です。</div>';
       return;
@@ -830,6 +865,10 @@
   }
 
   function renderShell() {
+    if (!isRankingEnabled() && appState.activeTab === "ranking") {
+      appState.activeTab = "input";
+    }
+
     const calculatedWorkout = calculateWorkout(appState.workout);
     const modeLabel = appState.liff.ready
       ? appState.liff.shareAvailable
@@ -855,10 +894,24 @@
       button.classList.toggle("is-active", isActive);
     });
 
+    if (elements.tabRankingButton) {
+      elements.tabRankingButton.hidden = !isRankingEnabled();
+    }
+    if (elements.tabNav) {
+      elements.tabNav.classList.toggle("has-ranking", isRankingEnabled());
+    }
+    if (elements.actionBar) {
+      elements.actionBar.classList.toggle("has-debug-actions", isDebugModeEnabled());
+    }
+
     setPanelVisibility("input", elements.tabInput);
     setPanelVisibility("preview", elements.tabPreview);
     setPanelVisibility("history", elements.tabHistory);
-    setPanelVisibility("ranking", elements.tabRanking);
+    if (isRankingEnabled()) {
+      setPanelVisibility("ranking", elements.tabRanking);
+    } else if (elements.tabRanking) {
+      elements.tabRanking.hidden = true;
+    }
     updateActionBar();
   }
 
@@ -880,6 +933,11 @@
   }
 
   function setActiveTab(tab) {
+    if (tab === "ranking" && !isRankingEnabled()) {
+      appState.activeTab = "input";
+      renderShell();
+      return;
+    }
     appState.activeTab = tab;
     if (tab !== "preview") {
       appState.ui.openJsonPreview = false;
@@ -888,6 +946,9 @@
   }
 
   function setPanelVisibility(tabName, element) {
+    if (!element) {
+      return;
+    }
     const isActive = appState.activeTab === tabName;
     element.hidden = !isActive;
     element.classList.toggle("is-active", isActive);
@@ -901,9 +962,10 @@
     const isInputTab = appState.activeTab === "input";
     elements.addExerciseButton.classList.toggle("is-hidden", !isInputTab);
     elements.previewButton.classList.toggle("is-hidden", appState.activeTab === "preview");
+    elements.copyJsonButton.hidden = !isDebugModeEnabled();
     elements.copyJsonButton.textContent = appState.liff.shareAvailable
       ? "Flex JSONコピー"
-      : "代替コピー";
+      : "デバッグコピー";
   }
 
   function syncWorkoutUser() {
@@ -1465,11 +1527,18 @@
   }
 
   function changeRankingPeriod(period) {
+    if (!isRankingEnabled()) {
+      return;
+    }
     appState.rankingPeriod = period === "month" ? "month" : "week";
     renderRanking();
   }
 
   async function copyCurrentFlexJson() {
+    if (!isDebugModeEnabled()) {
+      setStatus("Flex JSONコピーはデバッグモードでのみ利用できます。", "warn");
+      return;
+    }
     const validation = validateWorkout(appState.workout);
     if (!validation.valid) {
       setStatus(validation.errors.join(" "), "error");
