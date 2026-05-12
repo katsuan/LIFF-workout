@@ -129,6 +129,11 @@ button {
   backdrop-filter: blur(8px);
 }
 
+.app-header,
+.hero-card {
+  display: none;
+}
+
 .hero-card {
   display: grid;
   gap: 14px;
@@ -472,6 +477,13 @@ button {
   gap: 10px;
 }
 
+.exercise-selected-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
 .quick-exercise-button {
   display: grid;
   gap: 4px;
@@ -552,6 +564,7 @@ button {
 
 .preview-bubble {
   padding: 18px;
+  border: 2px solid #e24a4a;
 }
 
 .preview-bubble-header {
@@ -595,6 +608,21 @@ button {
   gap: 8px;
   color: var(--secondary);
   font-size: 0.92rem;
+  align-items: center;
+}
+
+.preview-rm-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 28px;
+  padding: 4px 8px;
+  border-radius: 6px;
+  background: #e92b2b;
+  color: #ffffff;
+  font-size: 0.76rem;
+  font-weight: 800;
+  white-space: nowrap;
 }
 
 .history-card,
@@ -781,8 +809,7 @@ details.json-accordion summary::-webkit-details-marker {
   .summary-grid,
   .preview-grid,
   .history-grid,
-  .ranking-grid,
-  .set-fields {
+  .ranking-grid {
     grid-template-columns: 1fr;
   }
 
@@ -842,6 +869,15 @@ details.json-accordion summary::-webkit-details-marker {
 
   .set-summary {
     flex-wrap: wrap;
+  }
+
+  .set-fields {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .exercise-selected-head {
+    flex-direction: column;
+    align-items: stretch;
   }
 
   .history-actions {

@@ -18,8 +18,8 @@
   };
 
   const MAX_HISTORY_ITEMS = 10;
-  const MAX_SETS_PER_FLEX_EXERCISE = 4;
-  const MAX_EXERCISES_PER_BUBBLE = 3;
+  const MAX_SETS_PER_FLEX_EXERCISE = 8;
+  const MAX_EXERCISES_PER_BUBBLE = 6;
   const DEFAULT_USER = {
     userId: null,
     displayName: "anonymous",
@@ -129,12 +129,12 @@
     if (!liffResult.ready) {
       setStatus(
         isDebugModeEnabled()
-          ? "LIFF未初期化のため、プレビュー専用モードで起動しました。デバッグ用にFlex JSON確認が利用できます。"
-          : "LIFF未初期化のため、プレビュー専用モードで起動しました。LINE共有はLIFF環境で利用してください。",
+          ? "共有機能を使えないため、プレビュー中心で起動しました。デバッグ用のJSON確認は利用できます。"
+          : "この環境では共有機能を使えないため、プレビュー中心で起動しました。",
         "warn"
       );
     } else {
-      setStatus("LIFFの初期化が完了しました。LINE共有が利用できます。", "info");
+      setStatus("共有機能が利用できます。", "info");
     }
 
     syncWorkoutUser();
@@ -236,6 +236,7 @@
       exerciseId: generateId("exercise"),
       catalogId: "",
       primaryMuscle: "",
+      selectionMuscle: "",
       name: "",
       memo: "",
       sets: [createEmptySet()],
@@ -321,6 +322,49 @@
     exercise.catalogId = catalogExercise.id;
     exercise.name = catalogExercise.name;
     exercise.primaryMuscle = catalogExercise.muscle;
+    exercise.selectionMuscle = catalogExercise.muscle;
+  }
+
+  function updateExerciseSelectionMuscle(exerciseId, muscle) {
+    const exercise = appState.workout.exercises.find(function (item) {
+      return item.exerciseId === exerciseId;
+    });
+    if (!exercise) {
+      return;
+    }
+    exercise.selectionMuscle = muscle;
+    renderInput();
+  }
+
+  function chooseExerciseCatalog(exerciseId, catalogId) {
+    const exercise = appState.workout.exercises.find(function (item) {
+      return item.exerciseId === exerciseId;
+    });
+    if (!exercise) {
+      return;
+    }
+    applyCatalogToExercise(exercise, catalogId);
+    touchWorkout();
+    renderInput();
+    renderPreview();
+  }
+
+  function resetExerciseChoice(exerciseId) {
+    const exercise = appState.workout.exercises.find(function (item) {
+      return item.exerciseId === exerciseId;
+    });
+    if (!exercise) {
+      return;
+    }
+    exercise.catalogId = "";
+    exercise.primaryMuscle = "";
+    exercise.selectionMuscle = "";
+    exercise.name = "";
+    exercise.memo = "";
+    exercise.sets = [createEmptySet()];
+    touchWorkout();
+    renderInput();
+    renderPreview();
   }
 
   function calculateWorkout(workout) {
@@ -488,7 +532,7 @@
           );
         }
       } else {
-        setStatus("この環境ではLINE共有を実行できません。LINEアプリ内のLIFFから開いてください。", "warn");
+        setStatus("この環境では共有を実行できません。対応環境で開いてください。", "warn");
       }
       return;
     }
@@ -496,7 +540,7 @@
     try {
       const result = await window.liff.shareTargetPicker([message]);
       if (result) {
-        setStatus("LINEでワークアウトを共有しました。", "info");
+        setStatus("共有しました。", "info");
       } else {
         setStatus("共有はキャンセルされました。入力内容と履歴は保持しています。", "warn");
       }
@@ -508,8 +552,8 @@
       renderPreview();
       setStatus(
         isDebugModeEnabled()
-          ? "LINE共有でエラーが発生しました。デバッグ用にFlex JSONプレビューへ切り替えています。"
-          : "LINE共有でエラーが発生しました。時間をおいて再度お試しください。",
+          ? "共有でエラーが発生しました。デバッグ用にFlex JSONプレビューへ切り替えています。"
+          : "共有でエラーが発生しました。時間をおいて再度お試しください。",
         "error"
       );
     }
@@ -528,14 +572,13 @@
 
   function renderInput() {
     const workout = appState.workout;
-    const filteredCatalog = getFilteredExerciseCatalog();
     const html = [
       '<div class="input-stack">',
       '  <section class="panel-card">',
       '    <div class="panel-head">',
       "      <div>",
       '        <h2 class="panel-title">記録を入力</h2>',
-      "        <p>日付とタイトルを入れて、種目を選びながらセットを追加します。</p>",
+      "        <p>ここで入力した日付とタイトルが共有カードの先頭に表示されます。</p>",
       "      </div>",
       '      <span class="badge">' + escapeHtml(String(workout.exercises.length)) + '種目</span>',
       "    </div>",
@@ -550,26 +593,11 @@
       fieldTemplate({
         label: "ワークアウトタイトル",
         input:
-          '<input class="text-input" data-field="title" type="text" placeholder="Push Day / Leg Day など" value="' +
+          '<input class="text-input" data-field="title" type="text" placeholder="WorkOut / 背中トレ など" value="' +
           escapeHtml(workout.title || "") +
           '" />'
       }),
       "    </div>",
-      fieldTemplate({
-        label: "中心部位で絞り込み",
-        input: renderCatalogFilterButtons()
-      }),
-      fieldTemplate({
-        label: "種目を検索",
-        input:
-          '<input class="text-input" data-ui-field="catalogQuery" type="text" placeholder="ベンチプレス / スクワット など" value="' +
-          escapeHtml(appState.ui.catalogQuery || "") +
-          '" />'
-      }),
-      fieldTemplate({
-        label: "候補から追加",
-        input: renderQuickExerciseButtons(filteredCatalog)
-      }),
       '    <p class="helper-text">空セット、重量未入力、回数未入力のセットは共有内容から自動除外されます。</p>',
       '    <div class="button-row">',
       '      <button class="pill-button" data-action="sample-workout" type="button">サンプル入力</button>',
@@ -600,22 +628,21 @@
       '  <section class="panel-card">',
       '    <div class="panel-head">',
       "      <div>",
-      '        <p class="section-label">Flex Preview</p>',
-      '        <h2 class="panel-title">プレビュータブ</h2>',
-      "        <p>共有前にボリューム、推定1RM、見た目のまとまりを確認できます。</p>",
+      '        <h2 class="panel-title">送信プレビュー</h2>',
+      "        <p>送信される見た目に近い形で確認できます。</p>",
       "      </div>",
       '      <span class="badge">' +
         escapeHtml(bubbles.length === 1 ? "bubble" : "carousel " + bubbles.length + "件") +
         "</span>",
       "    </div>",
       '    <div class="summary-grid">',
-      renderSummaryCard("総ボリューム", formatMetric(calculatedWorkout.totalVolume, "kg")),
+      renderSummaryCard("日付", calculatedWorkout.date || "-"),
       renderSummaryCard("共有対象種目", String(shareableWorkout.exercises.length)),
-      renderSummaryCard("最大推定1RM", formatMetric(findWorkoutMax1rm(calculatedWorkout), "kg", 1)),
+      renderSummaryCard("タイトル", calculatedWorkout.title || "WorkOut"),
       renderSummaryCard("有効セット数", String(countValidSets(calculatedWorkout))),
       "    </div>",
       validation.valid
-        ? '<p class="preview-note">この内容で LINE Flex Message を生成できます。</p>'
+        ? '<p class="preview-note">この内容で共有メッセージを生成できます。</p>'
         : '<p class="preview-note">共有前に入力タブで不足項目を埋めてください。' +
           escapeHtml(validation.errors.join(" ")) +
           "</p>",
@@ -655,7 +682,7 @@
 
     if (!appState.history.length) {
       elements.tabHistory.innerHTML =
-        '<div class="empty-state">まだ履歴がありません。LINE共有または保存後にここへ表示されます。</div>';
+        '<div class="empty-state">まだ履歴がありません。共有後にここへ表示されます。</div>';
       return;
     }
 
@@ -666,15 +693,13 @@
           return [
             '<article class="history-card">',
             "  <header>",
-            "    <h4>" + escapeHtml(workout.title || "Workout") + "</h4>",
+            "    <h4>" + escapeHtml(workout.title || "WorkOut") + "</h4>",
             '    <p class="history-meta">' +
               escapeHtml(workout.date || "-") +
-              " / " +
-              escapeHtml((workout.user && workout.user.displayName) || "anonymous") +
               "</p>",
             "  </header>",
             '  <div class="history-grid">',
-            renderSummaryCard("総ボリューム", formatMetric(workout.totalVolume || 0, "kg")),
+            renderSummaryCard("日付", workout.date || "-"),
             renderSummaryCard("種目数", String((workout.exercises || []).length)),
             "  </div>",
             '  <div class="history-actions">',
@@ -890,6 +915,21 @@
       case "add-quick-exercise":
         addExercise(button.getAttribute("data-catalog-id"));
         break;
+      case "set-exercise-muscle":
+        updateExerciseSelectionMuscle(
+          button.getAttribute("data-exercise-id"),
+          button.getAttribute("data-muscle") || ""
+        );
+        break;
+      case "choose-exercise-card":
+        chooseExerciseCatalog(
+          button.getAttribute("data-exercise-id"),
+          button.getAttribute("data-catalog-id")
+        );
+        break;
+      case "change-exercise-choice":
+        resetExerciseChoice(button.getAttribute("data-exercise-id"));
+        break;
       default:
         break;
     }
@@ -898,13 +938,6 @@
   function handleInput(event) {
     const target = event.target;
     if (!(target instanceof HTMLElement)) {
-      return;
-    }
-
-    if (target.hasAttribute("data-ui-field")) {
-      const uiField = target.getAttribute("data-ui-field");
-      appState.ui[uiField] = target.value;
-      renderInput();
       return;
     }
 
@@ -992,7 +1025,7 @@
     elements.liffModeChip.textContent = modeLabel;
 
     elements.heroStats.innerHTML = [
-      renderHeroStat("総ボリューム", formatMetric(calculatedWorkout.totalVolume, "kg")),
+      renderHeroStat("日付", calculatedWorkout.date || "-"),
       renderHeroStat("種目数", String(calculatedWorkout.exercises.length)),
       renderHeroStat("履歴", String(appState.history.length) + "件")
     ].join("");
@@ -1193,25 +1226,15 @@
   }
 
   function renderExerciseCard(exercise, exerciseIndex) {
-    const exerciseOptions = EXERCISE_CATALOG.map(function (item) {
-      return (
-        '<option value="' +
-        escapeHtml(item.id) +
-        '"' +
-        (exercise.catalogId === item.id ? " selected" : "") +
-        ">" +
-        escapeHtml(item.name + " / " + item.muscle) +
-        "</option>"
-      );
-    }).join("");
+    const showExerciseFields = Boolean(exercise.catalogId);
 
     return [
       '<section class="exercise-card">',
       '  <div class="exercise-header">',
       "    <div>",
-      '      <p class="section-label">Exercise ' + (exerciseIndex + 1) + "</p>",
+      '      <p class="section-label">エクササイズ ' + (exerciseIndex + 1) + "</p>",
       '      <h3 class="exercise-title">' +
-        escapeHtml(exercise.name || "新しい種目") +
+        escapeHtml(exercise.name || "種目を選択") +
         "</h3>",
       exercise.primaryMuscle
         ? '      <p class="exercise-meta">' + escapeHtml(exercise.primaryMuscle) + "</p>"
@@ -1222,52 +1245,53 @@
         '" type="button">種目削除</button>',
       "  </div>",
       '  <div class="form-grid">',
-      fieldTemplate({
-        label: "種目候補",
-        input:
-          '<select class="text-input" data-exercise-select="catalogId" data-exercise-id="' +
-          escapeHtml(exercise.exerciseId) +
-          '">' +
-          '<option value="">候補から選択</option>' +
-          exerciseOptions +
-          "</select>"
-      }),
-      fieldTemplate({
-        label: "表示名",
-        input:
-          '<input class="text-input" data-exercise-field="name" data-exercise-id="' +
-          escapeHtml(exercise.exerciseId) +
-          '" type="text" placeholder="ベンチプレス / スクワット など" value="' +
-          escapeHtml(exercise.name || "") +
-          '" />'
-      }),
-      '    <div class="sets-stack">',
-      (exercise.sets || [])
-        .map(function (set, setIndex) {
-          return renderSetRow(exercise.exerciseId, set, setIndex);
-        })
-        .join(""),
-      "    </div>",
-      '    <div class="button-row">',
-      '      <button class="mini-button" data-action="add-set" data-exercise-id="' +
-        escapeHtml(exercise.exerciseId) +
-        '" type="button">セット追加</button>',
-      "    </div>",
-      fieldTemplate({
-        label: "種目メモ",
-        input:
-          '<textarea class="textarea-input" data-exercise-field="memo" data-exercise-id="' +
-          escapeHtml(exercise.exerciseId) +
-          '" placeholder="フォームや調子のメモ">' +
-          escapeHtml(exercise.memo || "") +
-          "</textarea>"
-      }),
+      !showExerciseFields
+        ? renderExercisePicker(exercise)
+        : [
+            '<div class="exercise-selected-head">',
+            '  <div class="badge">' + escapeHtml(exercise.primaryMuscle || "種目") + "</div>",
+            '  <button class="ghost-button" data-action="change-exercise-choice" data-exercise-id="' +
+              escapeHtml(exercise.exerciseId) +
+              '" type="button">種目を変更</button>',
+            "</div>",
+            fieldTemplate({
+              label: "表示名",
+              input:
+                '<input class="text-input" data-exercise-field="name" data-exercise-id="' +
+                escapeHtml(exercise.exerciseId) +
+                '" type="text" placeholder="ベンチプレス / スクワット など" value="' +
+                escapeHtml(exercise.name || "") +
+                '" />'
+            }),
+            '    <div class="sets-stack">',
+            (exercise.sets || [])
+              .map(function (set, setIndex) {
+                return renderSetRow(exercise.exerciseId, set, setIndex);
+              })
+              .join(""),
+            "    </div>",
+            '    <div class="button-row">',
+            '      <button class="mini-button" data-action="add-set" data-exercise-id="' +
+              escapeHtml(exercise.exerciseId) +
+              '" type="button">セット追加</button>',
+            "    </div>",
+            fieldTemplate({
+              label: "種目メモ",
+              input:
+                '<textarea class="textarea-input" data-exercise-field="memo" data-exercise-id="' +
+                escapeHtml(exercise.exerciseId) +
+                '" placeholder="フォームや調子のメモ">' +
+                escapeHtml(exercise.memo || "") +
+                "</textarea>"
+            })
+          ].join(""),
       "  </div>",
       "</section>"
     ].join("");
   }
 
   function renderSetRow(exerciseId, set, setIndex) {
+    const hasValidSet = isValidSetInput(toNullableNumber(set.weight), toNullableNumber(set.reps));
     return [
       '<div class="set-row">',
       '  <div class="set-row-head">',
@@ -1303,17 +1327,19 @@
       "    </label>",
       "  </div>",
       '  <div class="set-summary">',
-      '    <small class="metric-label">Volume</small><strong class="metric-value">' +
-        escapeHtml(formatMetric(set.volume || 0, "kg")) +
-        "</strong><small class=\"metric-label\">推定1RM " +
-        escapeHtml(formatMetric(set.estimated1rm || 0, "kg", 1)) +
-        "</small>",
+      '    <small class="metric-label">推定1RM</small><strong class="metric-value">' +
+        escapeHtml(hasValidSet ? formatMetric(set.estimated1rm || 0, "kg", 1) : "-") +
+        "</strong>",
       "</div>"
     ].join("");
   }
 
   function renderExerciseMetrics(workout) {
-    if (!workout.exercises.length) {
+    const previewExercises = (workout.exercises || []).filter(function (exercise) {
+      return Boolean((exercise.name || "").trim());
+    });
+
+    if (!previewExercises.length) {
       return "";
     }
 
@@ -1326,16 +1352,16 @@
       "    </div>",
       "  </div>",
       '  <div class="preview-grid">',
-      workout.exercises
+      previewExercises
         .map(function (exercise) {
           return [
             '<article class="summary-card">',
             "  <small>" + escapeHtml(exercise.name || "未入力種目") + "</small>",
             '  <strong class="summary-value">' +
-              escapeHtml(formatMetric(exercise.totalVolume || 0, "kg")) +
-              "</strong>",
-            '  <div class="history-meta">Max 1RM ' +
               escapeHtml(formatMetric(exercise.maxEstimated1rm || 0, "kg", 1)) +
+              "</strong>",
+            '  <div class="history-meta">Max RM' +
+              (exercise.primaryMuscle ? " / " + escapeHtml(exercise.primaryMuscle) : "") +
               "</div>",
             "</article>"
           ].join("");
@@ -1350,122 +1376,50 @@
     return {
       type: "bubble",
       size: "mega",
+      styles: {
+        body: {
+          backgroundColor: "#FFFFFF"
+        },
+        footer: {
+          backgroundColor: "#E92B2B"
+        }
+      },
       header: {
         type: "box",
         layout: "vertical",
-        backgroundColor: "#264653",
-        paddingAll: "16px",
+        backgroundColor: "#E92B2B",
+        paddingAll: "12px",
         contents: [
           {
             type: "text",
-            text: workout.date || "-",
-            color: "#ffffff",
-            weight: "bold",
-            size: "sm"
-          },
-          {
-            type: "text",
-            text: workout.title || "Workout",
+            text: (workout.date || "-") + " " + (workout.title || "WorkOut"),
             color: "#ffffff",
             weight: "bold",
             size: "lg",
             wrap: true,
-            margin: "sm"
-          },
-          {
-            type: "text",
-            text:
-              ((workout.user && workout.user.displayName) || "anonymous") +
-              (bubbleCount > 1 ? "  " + (bubbleIndex + 1) + "/" + bubbleCount : ""),
-            color: "#F7DFC8",
-            size: "xs",
-            margin: "sm"
+            margin: "none"
           }
         ]
       },
       body: {
         type: "box",
         layout: "vertical",
-        paddingAll: "16px",
-        spacing: "md",
-        contents: [
-          {
-            type: "box",
-            layout: "baseline",
-            contents: [
-              {
-                type: "text",
-                text: "Total Volume",
-                size: "sm",
-                color: "#5D6C5D",
-                flex: 3
-              },
-              {
-                type: "text",
-                text: formatMetric(workout.totalVolume, "kg"),
-                size: "md",
-                weight: "bold",
-                align: "end",
-                flex: 2
-              }
-            ]
-          }
-        ].concat(
-          exercises.map(function (exercise) {
-            return {
-              type: "box",
-              layout: "vertical",
-              spacing: "sm",
-              margin: "md",
-              paddingAll: "12px",
-              backgroundColor: "#FCF7F2",
-              cornerRadius: "12px",
-              contents: [
-                {
-                  type: "text",
-                  text: exercise.name,
-                  weight: "bold",
-                  size: "md",
-                  wrap: true
-                },
-                {
-                  type: "text",
-                  text:
-                    "RM " +
-                    formatMetric(exercise.maxEstimated1rm, "kg", 1) +
-                    " / Vol " +
-                    formatMetric(exercise.totalVolume, "kg"),
-                  size: "xs",
-                  color: "#5D6C5D",
-                  wrap: true
-                }
-              ].concat(buildSetLinesForFlex(exercise)).concat(
-                exercise.memo
-                  ? [
-                      {
-                        type: "text",
-                        text: "Memo: " + truncateText(exercise.memo, 70),
-                        size: "xs",
-                        color: "#5D6C5D",
-                        wrap: true
-                      }
-                    ]
-                  : []
-              )
-            };
-          })
-        )
+        paddingAll: "8px",
+        spacing: "sm",
+        contents: exercises.map(function (exercise) {
+          return buildExerciseBoxForFlex(exercise);
+        })
       },
       footer: {
         type: "box",
         layout: "vertical",
-        paddingAll: "12px",
+        paddingAll: "6px",
         contents: [
           {
             type: "text",
-            text: "Workout shared from LIFF",
+            text: "Powered by " + (APP_CONFIG.APP_NAME || "Workout Share"),
             size: "xs",
-            color: "#5D6C5D",
+            color: "#FFFFFF",
             align: "center"
           }
         ]
@@ -1473,30 +1427,104 @@
     };
   }
 
+  function buildExerciseBoxForFlex(exercise) {
+    return {
+      type: "box",
+      layout: "vertical",
+      spacing: "sm",
+      margin: "sm",
+      paddingAll: "10px",
+      borderWidth: "2px",
+      borderColor: "#E24A4A",
+      cornerRadius: "12px",
+      contents: [
+        {
+          type: "box",
+          layout: "baseline",
+          contents: [
+            {
+              type: "text",
+              text: exercise.name,
+              weight: "bold",
+              size: "md",
+              wrap: true,
+              flex: 4
+            },
+            {
+              type: "text",
+              text: "RM : " + formatMetric(exercise.maxEstimated1rm, "kg", 0),
+              size: "md",
+              align: "end",
+              flex: 3
+            }
+          ]
+        }
+      ].concat(buildSetLinesForFlex(exercise)).concat(
+        exercise.memo
+          ? [
+              {
+                type: "text",
+                text: truncateText(exercise.memo, 46),
+                size: "xs",
+                color: "#666666",
+                wrap: true
+              }
+            ]
+          : []
+      )
+    };
+  }
+
   function buildSetLinesForFlex(exercise) {
     const visibleSets = exercise.sets.slice(0, MAX_SETS_PER_FLEX_EXERCISE);
     const lines = visibleSets.map(function (set, index) {
+      const isMaxRmSet =
+        roundNumber(set.estimated1rm || 0, 0) === roundNumber(exercise.maxEstimated1rm || 0, 0);
       return {
-        type: "text",
-        text:
-          "Set " +
-          (index + 1) +
-          "  " +
-          formatMetric(set.weight, "kg") +
-          " x " +
-          formatMetric(set.reps, "reps", 0) +
-          "  Vol " +
-          formatMetric(set.volume, "kg"),
-        size: "xs",
-        color: "#264653",
-        wrap: true
+        type: "box",
+        layout: "baseline",
+        spacing: "sm",
+        contents: [
+          {
+            type: "text",
+            text: String(index + 1),
+            size: "sm",
+            flex: 1
+          },
+          {
+            type: "text",
+            text:
+              formatFlexWeight(set.weight) +
+              "  ×  " +
+              formatMetric(set.reps, "reps", 0) +
+              (isMaxRmSet ? "  (1RM:" + formatMetric(set.estimated1rm, "kg", 0) + ")" : ""),
+            size: "sm",
+            wrap: true,
+            flex: 6
+          }
+        ].concat(
+          isMaxRmSet
+            ? [
+                {
+                  type: "text",
+                  text: "MAX RM",
+                  size: "xs",
+                  color: "#FFFFFF",
+                  backgroundColor: "#E92B2B",
+                  align: "center",
+                  gravity: "center",
+                  flex: 3
+                }
+              ]
+            : []
+        )
       };
     });
 
     if (exercise.sets.length > MAX_SETS_PER_FLEX_EXERCISE) {
       lines.push({
         type: "text",
-        text: "+" + (exercise.sets.length - MAX_SETS_PER_FLEX_EXERCISE) + " sets omitted",
+        text: "ほか " + (exercise.sets.length - MAX_SETS_PER_FLEX_EXERCISE) + " セット",
         size: "xs",
         color: "#5D6C5D"
       });
@@ -1506,30 +1534,21 @@
   }
 
   function renderBubblePreview(workout, bubble, index) {
-    const exerciseBoxes = bubble.body.contents.slice(1);
+    const exerciseBoxes = bubble.body.contents;
     return [
       '<section class="preview-bubble">',
       '  <div class="preview-bubble-header">',
       "    <div>",
-      '      <div class="preview-bubble-title">' +
-        escapeHtml(workout.title || "Workout") +
-        "</div>",
-      '      <div class="history-meta">' +
-        escapeHtml(workout.date || "-") +
-        " / " +
-        escapeHtml((workout.user && workout.user.displayName) || "anonymous") +
-        "</div>",
+      '      <div class="preview-bubble-title">' + escapeHtml((workout.date || "-") + " " + (workout.title || "WorkOut")) + "</div>",
       "    </div>",
       '    <span class="badge">Bubble ' + (index + 1) + "</span>",
       "  </div>",
-      '  <div class="metric-row"><span class="metric-label">総ボリューム</span><strong class="metric-value">' +
-        escapeHtml(formatMetric(workout.totalVolume, "kg")) +
-        "</strong></div>",
       exerciseBoxes
         .map(function (box) {
-          const title = box.contents[0] ? box.contents[0].text : "";
-          const summary = box.contents[1] ? box.contents[1].text : "";
-          const setLines = box.contents.slice(2);
+          const headerBox = box.contents[0] || { contents: [] };
+          const title = headerBox.contents[0] ? headerBox.contents[0].text : "";
+          const summary = headerBox.contents[1] ? headerBox.contents[1].text : "";
+          const setLines = box.contents.slice(1);
           return [
             '<article class="preview-exercise">',
             "  <h4>" + escapeHtml(title) + "</h4>",
@@ -1537,7 +1556,19 @@
             '  <div class="preview-sets">',
             setLines
               .map(function (line) {
-                return '<div class="preview-set-line"><span>' + escapeHtml(line.text) + "</span></div>";
+                if (line.type === "box") {
+                  const left = line.contents[0] ? line.contents[0].text : "";
+                  const main = line.contents[1] ? line.contents[1].text : "";
+                  const badge = line.contents[2] ? line.contents[2].text : "";
+                  return (
+                    '<div class="preview-set-line"><span>' +
+                    escapeHtml(left + " " + main) +
+                    "</span>" +
+                    (badge ? '<strong class="preview-rm-badge">' + escapeHtml(badge) + "</strong>" : "") +
+                    "</div>"
+                  );
+                }
+                return '<div class="preview-set-line"><span>' + escapeHtml(line.text || "") + "</span></div>";
               })
               .join(""),
             "  </div>",
@@ -1597,6 +1628,63 @@
     ].join("");
   }
 
+  function renderExercisePicker(exercise) {
+    const muscleButtons = MUSCLE_FILTERS.filter(function (muscle) {
+      return muscle !== "all";
+    })
+      .map(function (muscle) {
+        const isActive = exercise.selectionMuscle === muscle;
+        return (
+          '<button class="catalog-chip' +
+          (isActive ? " is-active" : "") +
+          '" data-action="set-exercise-muscle" data-exercise-id="' +
+          escapeHtml(exercise.exerciseId) +
+          '" data-muscle="' +
+          escapeHtml(muscle) +
+          '" type="button">' +
+          escapeHtml(muscle) +
+          "</button>"
+        );
+      })
+      .join("");
+
+    const exerciseCards = exercise.selectionMuscle
+      ? EXERCISE_CATALOG.filter(function (item) {
+          return item.muscle === exercise.selectionMuscle;
+        })
+          .map(function (item) {
+            return (
+              '<button class="quick-exercise-button" data-action="choose-exercise-card" data-exercise-id="' +
+              escapeHtml(exercise.exerciseId) +
+              '" data-catalog-id="' +
+              escapeHtml(item.id) +
+              '" type="button">' +
+              '<strong>' +
+              escapeHtml(item.name) +
+              "</strong>" +
+              '<span>' +
+              escapeHtml(item.muscle) +
+              "</span>" +
+              "</button>"
+            );
+          })
+          .join("")
+      : '<div class="empty-state compact">先に部位を選ぶと、候補の種目が表示されます。</div>';
+
+    return [
+      '<div class="exercise-picker">',
+      '  <div class="field-group">',
+      '    <span class="field-label">1. 部位を選択</span>',
+      '    <div class="catalog-filter-row">' + muscleButtons + "</div>",
+      "  </div>",
+      '  <div class="field-group">',
+      '    <span class="field-label">2. 種目を選択</span>',
+      '    <div class="quick-exercise-grid">' + exerciseCards + "</div>",
+      "  </div>",
+      "</div>"
+    ].join("");
+  }
+
   function renderCatalogFilterButtons() {
     return [
       '<div class="catalog-filter-row">',
@@ -1645,6 +1733,10 @@
     ].join("");
   }
 
+  function formatFlexWeight(weight) {
+    return formatMetric(weight, "kg", 1);
+  }
+
   function fieldTemplate(options) {
     return [
       '<label class="field-group">',
@@ -1659,13 +1751,15 @@
     appState.workout = hydrateWorkout({
       workoutId: generateId("workout"),
       date: getTodayLocalDate(),
-      title: "Upper Strength Session",
+      title: "上半身ワークアウト",
       user: Object.assign({}, DEFAULT_USER, appState.liff.profile || {}),
       groupKey: resolveGroupKey(),
       exercises: [
         {
           exerciseId: generateId("exercise"),
-          name: "Bench Press",
+          catalogId: "bench-press",
+          primaryMuscle: "胸",
+          name: "ベンチプレス",
           memo: "最後のセットはしっかり止めて挙上。",
           sets: [
             { setId: generateId("set"), weight: 60, reps: 8 },
@@ -1675,7 +1769,9 @@
         },
         {
           exerciseId: generateId("exercise"),
-          name: "Lat Pulldown",
+          catalogId: "lat-pulldown",
+          primaryMuscle: "背中",
+          name: "ラットプルダウン",
           memo: "肩をすくめずに広背筋に乗せる。",
           sets: [
             { setId: generateId("set"), weight: 45, reps: 12 },
