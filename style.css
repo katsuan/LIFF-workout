@@ -259,7 +259,6 @@ button {
 }
 
 .exercise-header,
-.set-row,
 .history-row,
 .ranking-row,
 .metric-row {
@@ -300,6 +299,8 @@ button {
 .set-row {
   display: grid;
   gap: 12px;
+  justify-content: stretch;
+  align-items: stretch;
   padding: 14px;
   border: 1px solid rgba(215, 224, 212, 0.96);
   border-radius: 18px;

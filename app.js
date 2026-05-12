@@ -231,6 +231,7 @@
     return {
       exerciseId: generateId("exercise"),
       catalogId: "",
+      isCustom: false,
       primaryMuscle: "",
       selectionMuscle: "",
       name: "",
@@ -316,6 +317,7 @@
       return;
     }
     exercise.catalogId = catalogExercise.id;
+    exercise.isCustom = false;
     exercise.name = catalogExercise.name;
     exercise.primaryMuscle = catalogExercise.muscle;
     exercise.selectionMuscle = catalogExercise.muscle;
@@ -345,6 +347,22 @@
     renderPreview();
   }
 
+  function startCustomExercise(exerciseId) {
+    const exercise = appState.workout.exercises.find(function (item) {
+      return item.exerciseId === exerciseId;
+    });
+    if (!exercise) {
+      return;
+    }
+    exercise.catalogId = "";
+    exercise.isCustom = true;
+    exercise.primaryMuscle = exercise.selectionMuscle || exercise.primaryMuscle || "";
+    exercise.name = "";
+    touchWorkout();
+    renderInput();
+    renderPreview();
+  }
+
   function resetExerciseChoice(exerciseId) {
     const exercise = appState.workout.exercises.find(function (item) {
       return item.exerciseId === exerciseId;
@@ -353,6 +371,7 @@
       return;
     }
     exercise.catalogId = "";
+    exercise.isCustom = false;
     exercise.primaryMuscle = "";
     exercise.selectionMuscle = "";
     exercise.name = "";
@@ -923,6 +942,9 @@
           button.getAttribute("data-catalog-id")
         );
         break;
+      case "start-custom-exercise":
+        startCustomExercise(button.getAttribute("data-exercise-id"));
+        break;
       case "change-exercise-choice":
         resetExerciseChoice(button.getAttribute("data-exercise-id"));
         break;
@@ -1226,7 +1248,7 @@
   }
 
   function renderExerciseCard(exercise, exerciseIndex) {
-    const showExerciseFields = Boolean(exercise.catalogId);
+    const showExerciseFields = Boolean(exercise.catalogId || exercise.isCustom);
 
     return [
       '<section class="exercise-card">',
@@ -1640,10 +1662,14 @@
       })
       .join("");
 
-    const exerciseCards = exercise.selectionMuscle
+    const candidateExercises = exercise.selectionMuscle
       ? EXERCISE_CATALOG.filter(function (item) {
           return item.muscle === exercise.selectionMuscle;
         })
+      : [];
+
+    const exerciseCards = candidateExercises.length
+      ? candidateExercises
           .map(function (item) {
             return (
               '<button class="quick-exercise-button" data-action="choose-exercise-card" data-exercise-id="' +
@@ -1661,7 +1687,9 @@
             );
           })
           .join("")
-      : '<div class="empty-state compact">先に部位を選ぶと、候補の種目が表示されます。</div>';
+      : exercise.selectionMuscle
+        ? '<div class="empty-state compact">この部位には候補がまだありません。手入力で追加できます。</div>'
+        : '<div class="empty-state compact">先に部位を選ぶと、候補の種目が表示されます。</div>';
 
     return [
       '<div class="exercise-picker">',
@@ -1672,6 +1700,11 @@
       '  <div class="field-group">',
       '    <span class="field-label">2. 種目を選択</span>',
       '    <div class="quick-exercise-grid">' + exerciseCards + "</div>",
+      exercise.selectionMuscle
+        ? '    <div class="button-row"><button class="ghost-button" data-action="start-custom-exercise" data-exercise-id="' +
+          escapeHtml(exercise.exerciseId) +
+          '" type="button">候補にない種目を入力</button></div>'
+        : "",
       "  </div>",
       "</div>"
     ].join("");
