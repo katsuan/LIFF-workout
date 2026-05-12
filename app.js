@@ -25,6 +25,33 @@
     displayName: "anonymous",
     pictureUrl: null
   };
+  const EXERCISE_CATALOG = [
+    { id: "bench-press", name: "ベンチプレス", muscle: "胸" },
+    { id: "incline-dumbbell-press", name: "インクラインダンベルプレス", muscle: "胸" },
+    { id: "machine-chest-press", name: "チェストプレス", muscle: "胸" },
+    { id: "pec-deck", name: "ペックデック", muscle: "胸" },
+    { id: "lat-pulldown", name: "ラットプルダウン", muscle: "背中" },
+    { id: "seated-row", name: "シーテッドロー", muscle: "背中" },
+    { id: "one-hand-row", name: "ワンハンドロー", muscle: "背中" },
+    { id: "pull-up", name: "チンニング", muscle: "背中" },
+    { id: "barbell-squat", name: "バーベルスクワット", muscle: "脚" },
+    { id: "leg-press", name: "レッグプレス", muscle: "脚" },
+    { id: "romanian-deadlift", name: "ルーマニアンデッドリフト", muscle: "脚" },
+    { id: "leg-extension", name: "レッグエクステンション", muscle: "脚" },
+    { id: "shoulder-press", name: "ショルダープレス", muscle: "肩" },
+    { id: "side-raise", name: "サイドレイズ", muscle: "肩" },
+    { id: "rear-delt-fly", name: "リアデルトフライ", muscle: "肩" },
+    { id: "upright-row", name: "アップライトロー", muscle: "肩" },
+    { id: "barbell-curl", name: "バーベルカール", muscle: "腕" },
+    { id: "dumbbell-curl", name: "ダンベルカール", muscle: "腕" },
+    { id: "triceps-pushdown", name: "トライセプスプレスダウン", muscle: "腕" },
+    { id: "skull-crusher", name: "スカルクラッシャー", muscle: "腕" },
+    { id: "ab-wheel", name: "アブローラー", muscle: "体幹" },
+    { id: "cable-crunch", name: "ケーブルクランチ", muscle: "体幹" },
+    { id: "plank", name: "プランク", muscle: "体幹" },
+    { id: "hanging-leg-raise", name: "ハンギングレッグレイズ", muscle: "体幹" }
+  ];
+  const MUSCLE_FILTERS = ["all", "胸", "背中", "脚", "肩", "腕", "体幹"];
 
   const appState = {
     activeTab: "input",
@@ -37,7 +64,9 @@
       type: "info"
     },
     ui: {
-      openJsonPreview: false
+      openJsonPreview: false,
+      catalogFilter: "all",
+      catalogQuery: ""
     },
     liff: {
       initialized: false,
@@ -60,6 +89,22 @@
 
   function isRankingEnabled() {
     return isDebugModeEnabled() && Boolean(FEATURE_FLAGS.enableRanking);
+  }
+
+  function getFilteredExerciseCatalog() {
+    return EXERCISE_CATALOG.filter(function (exercise) {
+      const matchesFilter =
+        appState.ui.catalogFilter === "all" || exercise.muscle === appState.ui.catalogFilter;
+      const query = appState.ui.catalogQuery.trim();
+      const matchesQuery = !query || exercise.name.indexOf(query) !== -1;
+      return matchesFilter && matchesQuery;
+    });
+  }
+
+  function findCatalogExercise(catalogId) {
+    return EXERCISE_CATALOG.find(function (item) {
+      return item.id === catalogId;
+    });
   }
 
   async function initApp() {
@@ -189,6 +234,8 @@
   function createEmptyExercise() {
     return {
       exerciseId: generateId("exercise"),
+      catalogId: "",
+      primaryMuscle: "",
       name: "",
       memo: "",
       sets: [createEmptySet()],
@@ -207,8 +254,12 @@
     };
   }
 
-  function addExercise() {
-    appState.workout.exercises.push(createEmptyExercise());
+  function addExercise(catalogId) {
+    const exercise = createEmptyExercise();
+    if (catalogId) {
+      applyCatalogToExercise(exercise, catalogId);
+    }
+    appState.workout.exercises.push(exercise);
     touchWorkout();
     renderInput();
     renderPreview();
@@ -260,6 +311,16 @@
     touchWorkout();
     renderInput();
     renderPreview();
+  }
+
+  function applyCatalogToExercise(exercise, catalogId) {
+    const catalogExercise = findCatalogExercise(catalogId);
+    if (!catalogExercise) {
+      return;
+    }
+    exercise.catalogId = catalogExercise.id;
+    exercise.name = catalogExercise.name;
+    exercise.primaryMuscle = catalogExercise.muscle;
   }
 
   function calculateWorkout(workout) {
@@ -467,14 +528,14 @@
 
   function renderInput() {
     const workout = appState.workout;
+    const filteredCatalog = getFilteredExerciseCatalog();
     const html = [
       '<div class="input-stack">',
       '  <section class="panel-card">',
       '    <div class="panel-head">',
       "      <div>",
-      '        <p class="section-label">Workout Input</p>',
-      '        <h2 class="panel-title">入力タブ</h2>',
-      "        <p>日付、タイトル、種目とセットをそのままLINE共有用データに変換します。</p>",
+      '        <h2 class="panel-title">記録を入力</h2>',
+      "        <p>日付とタイトルを入れて、種目を選びながらセットを追加します。</p>",
       "      </div>",
       '      <span class="badge">' + escapeHtml(String(workout.exercises.length)) + '種目</span>',
       "    </div>",
@@ -494,7 +555,22 @@
           '" />'
       }),
       "    </div>",
-      '    <p class="helper-text">空セット、重量未入力、回数未入力のセットはFlex生成対象から自動除外されます。</p>',
+      fieldTemplate({
+        label: "中心部位で絞り込み",
+        input: renderCatalogFilterButtons()
+      }),
+      fieldTemplate({
+        label: "種目を検索",
+        input:
+          '<input class="text-input" data-ui-field="catalogQuery" type="text" placeholder="ベンチプレス / スクワット など" value="' +
+          escapeHtml(appState.ui.catalogQuery || "") +
+          '" />'
+      }),
+      fieldTemplate({
+        label: "候補から追加",
+        input: renderQuickExerciseButtons(filteredCatalog)
+      }),
+      '    <p class="helper-text">空セット、重量未入力、回数未入力のセットは共有内容から自動除外されます。</p>',
       '    <div class="button-row">',
       '      <button class="pill-button" data-action="sample-workout" type="button">サンプル入力</button>',
       '      <button class="outline-button" data-action="reset-workout" type="button">入力リセット</button>',
@@ -807,6 +883,13 @@
       case "change-ranking-period":
         changeRankingPeriod(button.getAttribute("data-period"));
         break;
+      case "change-muscle-filter":
+        appState.ui.catalogFilter = button.getAttribute("data-muscle") || "all";
+        renderInput();
+        break;
+      case "add-quick-exercise":
+        addExercise(button.getAttribute("data-catalog-id"));
+        break;
       default:
         break;
     }
@@ -815,6 +898,13 @@
   function handleInput(event) {
     const target = event.target;
     if (!(target instanceof HTMLElement)) {
+      return;
+    }
+
+    if (target.hasAttribute("data-ui-field")) {
+      const uiField = target.getAttribute("data-ui-field");
+      appState.ui[uiField] = target.value;
+      renderInput();
       return;
     }
 
@@ -838,6 +928,26 @@
       }
       exercise[field] = target.value;
       touchWorkout();
+      renderPreview();
+      return;
+    }
+
+    if (target.hasAttribute("data-exercise-select")) {
+      const exerciseId = target.getAttribute("data-exercise-id");
+      const exercise = appState.workout.exercises.find(function (item) {
+        return item.exerciseId === exerciseId;
+      });
+      if (!exercise) {
+        return;
+      }
+      if (target.value) {
+        applyCatalogToExercise(exercise, target.value);
+      } else {
+        exercise.catalogId = "";
+        exercise.primaryMuscle = "";
+      }
+      touchWorkout();
+      renderInput();
       renderPreview();
       return;
     }
@@ -1083,6 +1193,18 @@
   }
 
   function renderExerciseCard(exercise, exerciseIndex) {
+    const exerciseOptions = EXERCISE_CATALOG.map(function (item) {
+      return (
+        '<option value="' +
+        escapeHtml(item.id) +
+        '"' +
+        (exercise.catalogId === item.id ? " selected" : "") +
+        ">" +
+        escapeHtml(item.name + " / " + item.muscle) +
+        "</option>"
+      );
+    }).join("");
+
     return [
       '<section class="exercise-card">',
       '  <div class="exercise-header">',
@@ -1091,6 +1213,9 @@
       '      <h3 class="exercise-title">' +
         escapeHtml(exercise.name || "新しい種目") +
         "</h3>",
+      exercise.primaryMuscle
+        ? '      <p class="exercise-meta">' + escapeHtml(exercise.primaryMuscle) + "</p>"
+        : "",
       "    </div>",
       '    <button class="danger-button" data-action="remove-exercise" data-exercise-id="' +
         escapeHtml(exercise.exerciseId) +
@@ -1098,11 +1223,21 @@
       "  </div>",
       '  <div class="form-grid">',
       fieldTemplate({
-        label: "種目名",
+        label: "種目候補",
+        input:
+          '<select class="text-input" data-exercise-select="catalogId" data-exercise-id="' +
+          escapeHtml(exercise.exerciseId) +
+          '">' +
+          '<option value="">候補から選択</option>' +
+          exerciseOptions +
+          "</select>"
+      }),
+      fieldTemplate({
+        label: "表示名",
         input:
           '<input class="text-input" data-exercise-field="name" data-exercise-id="' +
           escapeHtml(exercise.exerciseId) +
-          '" type="text" placeholder="Bench Press / Squat など" value="' +
+          '" type="text" placeholder="ベンチプレス / スクワット など" value="' +
           escapeHtml(exercise.name || "") +
           '" />'
       }),
@@ -1459,6 +1594,54 @@
       "  <small>" + escapeHtml(label) + "</small>",
       '  <strong class="summary-value">' + escapeHtml(value) + "</strong>",
       "</article>"
+    ].join("");
+  }
+
+  function renderCatalogFilterButtons() {
+    return [
+      '<div class="catalog-filter-row">',
+      MUSCLE_FILTERS.map(function (muscle) {
+        const isActive = appState.ui.catalogFilter === muscle;
+        const label = muscle === "all" ? "すべて" : muscle;
+        return (
+          '<button class="catalog-chip' +
+          (isActive ? " is-active" : "") +
+          '" data-action="change-muscle-filter" data-muscle="' +
+          escapeHtml(muscle) +
+          '" type="button">' +
+          escapeHtml(label) +
+          "</button>"
+        );
+      }).join(""),
+      "</div>"
+    ].join("");
+  }
+
+  function renderQuickExerciseButtons(items) {
+    if (!items.length) {
+      return '<div class="empty-state compact">一致する種目がありません。</div>';
+    }
+
+    return [
+      '<div class="quick-exercise-grid">',
+      items
+        .slice(0, 10)
+        .map(function (item) {
+          return (
+            '<button class="quick-exercise-button" data-action="add-quick-exercise" data-catalog-id="' +
+            escapeHtml(item.id) +
+            '" type="button">' +
+            '<strong>' +
+            escapeHtml(item.name) +
+            "</strong>" +
+            '<span>' +
+            escapeHtml(item.muscle) +
+            "</span>" +
+            "</button>"
+          );
+        })
+        .join(""),
+      "</div>"
     ].join("");
   }
 

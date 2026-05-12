@@ -444,6 +444,56 @@ button {
   gap: 10px;
 }
 
+.catalog-filter-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.catalog-chip {
+  min-height: 38px;
+  padding: 8px 12px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: #ffffff;
+  color: var(--muted);
+  font-weight: 700;
+}
+
+.catalog-chip.is-active {
+  background: var(--primary-soft);
+  color: var(--primary-dark);
+  border-color: transparent;
+}
+
+.quick-exercise-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.quick-exercise-button {
+  display: grid;
+  gap: 4px;
+  min-height: 70px;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: #ffffff;
+  text-align: left;
+}
+
+.quick-exercise-button strong {
+  color: var(--text);
+  font-size: 0.95rem;
+}
+
+.quick-exercise-button span {
+  color: var(--muted);
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
 .mini-button,
 .pill-button,
 .outline-button,
@@ -624,6 +674,11 @@ details.json-accordion summary::-webkit-details-marker {
   background: rgba(255, 255, 255, 0.72);
 }
 
+.empty-state.compact {
+  padding: 14px;
+  text-align: left;
+}
+
 .action-bar {
   position: fixed;
   left: 0;
@@ -769,6 +824,10 @@ details.json-accordion summary::-webkit-details-marker {
   .button-row {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .quick-exercise-grid {
+    grid-template-columns: 1fr;
   }
 
   .button-row .pill-button,
