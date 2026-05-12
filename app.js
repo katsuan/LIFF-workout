@@ -433,7 +433,7 @@
   }
 
   function estimate1rm(weight, reps) {
-    return weight * (1 + reps / 30);
+    return weight + (weight * reps) / 40;
   }
 
   function buildWorkoutFlexMessage(workout) {
