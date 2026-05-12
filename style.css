@@ -60,16 +60,6 @@ button {
   padding: 12px 14px 132px;
 }
 
-.app-header {
-  display: flex;
-  align-items: stretch;
-  justify-content: space-between;
-  gap: 12px;
-  margin-bottom: 14px;
-}
-
-.eyebrow,
-.hero-label,
 .section-label {
   margin: 0 0 6px;
   color: var(--primary-dark);
@@ -79,43 +69,10 @@ button {
   text-transform: uppercase;
 }
 
-.app-header h1,
-.hero-card h2,
 .panel-title {
   margin: 0;
 }
 
-.app-header h1 {
-  font-size: 1.38rem;
-  line-height: 1.15;
-}
-
-.header-meta {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: flex-end;
-  gap: 8px;
-  max-width: 42%;
-}
-
-.status-chip {
-  display: inline-flex;
-  align-items: center;
-  min-height: 32px;
-  padding: 6px 12px;
-  border-radius: 999px;
-  background: var(--primary-soft);
-  color: var(--primary-dark);
-  font-size: 0.88rem;
-  font-weight: 700;
-}
-
-.status-chip.subtle {
-  background: var(--secondary-soft);
-  color: var(--secondary);
-}
-
-.hero-card,
 .panel-card,
 .exercise-card,
 .history-card,
@@ -129,32 +86,6 @@ button {
   backdrop-filter: blur(8px);
 }
 
-.app-header,
-.hero-card {
-  display: none;
-}
-
-.hero-card {
-  display: grid;
-  gap: 14px;
-  padding: 18px;
-  margin-bottom: 14px;
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.96) 0%, rgba(247, 251, 246, 0.94) 100%);
-}
-
-.hero-card h2 {
-  font-size: 1.22rem;
-  line-height: 1.3;
-}
-
-.hero-copy {
-  margin: 8px 0 0;
-  color: var(--muted);
-  line-height: 1.55;
-}
-
-.hero-stats,
 .summary-grid,
 .ranking-grid,
 .preview-grid,
@@ -163,27 +94,11 @@ button {
   gap: 12px;
 }
 
-.hero-stat,
 .summary-card,
 .ranking-card {
   padding: 14px 16px;
 }
 
-.hero-stats {
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-}
-
-.hero-stat {
-  background: var(--primary-tint);
-  border-radius: 18px;
-}
-
-.hero-stat small {
-  color: var(--muted);
-  font-weight: 700;
-}
-
-.hero-stat strong,
 .summary-value,
 .metric-value {
   display: block;
@@ -771,11 +686,6 @@ details.json-accordion summary::-webkit-details-marker {
 }
 
 @media (min-width: 760px) {
-  .hero-card {
-    grid-template-columns: 1.7fr 1fr;
-    align-items: center;
-  }
-
   .form-grid.two-col {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
@@ -817,22 +727,10 @@ details.json-accordion summary::-webkit-details-marker {
     padding: 10px 12px 136px;
   }
 
-  .app-header {
-    flex-direction: column;
-    gap: 10px;
-  }
-
-  .header-meta {
-    justify-content: flex-start;
-    max-width: none;
-  }
-
-  .hero-stats,
   .summary-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
-  .hero-stat:last-child,
   .summary-grid .summary-card:last-child:nth-child(odd) {
     grid-column: 1 / -1;
   }

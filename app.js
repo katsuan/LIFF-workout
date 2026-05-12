@@ -143,10 +143,6 @@
   }
 
   function cacheElements() {
-    elements.appName = document.getElementById("app-name");
-    elements.profileChip = document.getElementById("profile-chip");
-    elements.liffModeChip = document.getElementById("liff-mode-chip");
-    elements.heroStats = document.getElementById("hero-stats");
     elements.statusPanel = document.getElementById("status-panel");
     elements.tabNav = document.getElementById("tab-nav");
     elements.tabButtons = Array.from(document.querySelectorAll(".tab-button"));
@@ -1012,24 +1008,6 @@
       appState.activeTab = "input";
     }
 
-    const calculatedWorkout = calculateWorkout(appState.workout);
-    const modeLabel = appState.liff.ready
-      ? appState.liff.shareAvailable
-        ? "LIFF Share Ready"
-        : "LIFF Preview Only"
-      : "Preview Mode";
-
-    elements.appName.textContent = APP_CONFIG.APP_NAME || "LIFF Workout Share";
-    elements.profileChip.textContent =
-      (appState.liff.profile && appState.liff.profile.displayName) || "anonymous";
-    elements.liffModeChip.textContent = modeLabel;
-
-    elements.heroStats.innerHTML = [
-      renderHeroStat("日付", calculatedWorkout.date || "-"),
-      renderHeroStat("種目数", String(calculatedWorkout.exercises.length)),
-      renderHeroStat("履歴", String(appState.history.length) + "件")
-    ].join("");
-
     renderStatus();
 
     elements.tabButtons.forEach(function (button) {
@@ -1058,6 +1036,26 @@
     updateActionBar();
   }
 
+  function renderActiveTab() {
+    switch (appState.activeTab) {
+      case "preview":
+        renderPreview();
+        break;
+      case "history":
+        renderHistory();
+        break;
+      case "ranking":
+        if (isRankingEnabled()) {
+          renderRanking();
+        }
+        break;
+      case "input":
+      default:
+        renderInput();
+        break;
+    }
+  }
+
   function renderStatus() {
     if (!appState.status.message) {
       elements.statusPanel.className = "status-panel";
@@ -1078,6 +1076,7 @@
   function setActiveTab(tab) {
     if (tab === "ranking" && !isRankingEnabled()) {
       appState.activeTab = "input";
+      renderActiveTab();
       renderShell();
       return;
     }
@@ -1085,6 +1084,7 @@
     if (tab !== "preview") {
       appState.ui.openJsonPreview = false;
     }
+    renderActiveTab();
     renderShell();
   }
 
@@ -1606,15 +1606,6 @@
             .join("") +
           "  </div>"
         : '<div class="empty-state">ランキングデータはまだありません。</div>',
-      "</article>"
-    ].join("");
-  }
-
-  function renderHeroStat(label, value) {
-    return [
-      '<article class="hero-stat">',
-      "  <small>" + escapeHtml(label) + "</small>",
-      "  <strong>" + escapeHtml(value) + "</strong>",
       "</article>"
     ].join("");
   }
