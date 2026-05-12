@@ -525,6 +525,10 @@ button {
   background: #ffffff;
 }
 
+.preview-host-card {
+  gap: 14px;
+}
+
 .preview-bubble-header {
   display: flex;
   align-items: flex-start;
@@ -568,7 +572,7 @@ button {
 
 .preview-exercise-card {
   padding: 12px;
-  border: 2px solid var(--share);
+  border: 2px solid var(--primary);
   border-radius: 16px;
   background: #ffffff;
 }
@@ -651,9 +655,17 @@ button {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
-  flex-wrap: wrap;
   gap: 12px;
   margin-bottom: 12px;
+}
+
+.history-card-copy {
+  min-width: 0;
+  flex: 1;
+}
+
+.history-meta-inline {
+  margin: 0 0 6px;
 }
 
 .history-card header,
@@ -679,6 +691,12 @@ button {
 
 .history-actions-end .danger-button {
   flex: 0 0 auto;
+}
+
+.history-actions-inline {
+  flex: 0 0 auto;
+  align-items: center;
+  flex-wrap: nowrap;
 }
 
 .workout-stats-section {
@@ -923,5 +941,10 @@ details.json-accordion summary::-webkit-details-marker {
   .history-actions {
     display: grid;
     grid-template-columns: 1fr 1fr;
+  }
+
+  .history-actions-inline {
+    display: flex;
+    grid-template-columns: none;
   }
 }

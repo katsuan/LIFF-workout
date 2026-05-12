@@ -640,7 +640,7 @@
 
     const html = [
       '<div class="preview-stack">',
-      '  <section class="panel-card">',
+      '  <section class="panel-card preview-host-card">',
       '    <div class="panel-head">',
       "      <div>",
       '        <h2 class="panel-title">送信内容</h2>',
@@ -652,12 +652,12 @@
         : '<p class="preview-note">共有前に入力タブで不足項目を埋めてください。' +
           escapeHtml(validation.errors.join(" ")) +
           "</p>",
-      "  </section>",
       bubbles
         .map(function (bubble, index) {
           return renderBubblePreview(shareableWorkout, bubble, index);
         })
         .join(""),
+      "  </section>",
       renderExerciseMetrics(calculatedWorkout),
       isDebugModeEnabled()
         ? '<section class="panel-card">' +
@@ -1498,26 +1498,29 @@
     return [
       '<article class="history-card">',
       '  <div class="history-card-head">',
-      "    <div>",
+      '    <div class="history-card-copy">',
+      '      <p class="history-meta history-meta-inline">' +
+        escapeHtml(workout.date || "-") +
+        " ・ " +
+        escapeHtml(String((workout.exercises || []).length)) +
+        "種目</p>",
       "      <h4>" + escapeHtml(resolveWorkoutTitle(workout.title)) + "</h4>",
-      '      <p class="history-meta">' + escapeHtml(workout.date || "-") + "</p>",
       "    </div>",
-      '    <span class="badge">' + escapeHtml(String((workout.exercises || []).length)) + "種目</span>",
-      '    <button class="pill-button" data-action="restore-history" data-workout-id="' +
+      '    <div class="history-actions history-actions-inline">',
+      '      <button class="pill-button" data-action="restore-history" data-workout-id="' +
         escapeHtml(workout.workoutId) +
         '" type="button">再入力</button>',
-      "  </div>",
-      renderWorkoutExerciseStats(workout, resolveWorkoutTitle(workout.title)),
-      '  <div class="history-actions history-actions-end">',
-      '    <button class="danger-button" data-action="delete-history" data-workout-id="' +
+      '      <button class="danger-button" data-action="delete-history" data-workout-id="' +
         escapeHtml(workout.workoutId) +
         '" type="button">履歴削除</button>',
+      "    </div>",
       "  </div>",
+      renderWorkoutExerciseStats(workout),
       "</article>"
     ].join("");
   }
 
-  function renderWorkoutExerciseStats(workout, title) {
+  function renderWorkoutExerciseStats(workout) {
     const exercises = (workout.exercises || []).filter(function (exercise) {
       return Boolean((exercise.name || "").trim());
     });
@@ -1528,12 +1531,6 @@
 
     return [
       '<section class="workout-stats-section">',
-      '  <div class="panel-head compact">',
-      "    <div>",
-      '      <p class="section-label">' + escapeHtml(title) + "</p>",
-      '      <h4 class="panel-title">種目・MAXRM</h4>',
-      "    </div>",
-      "  </div>",
       '  <div class="preview-grid">',
       exercises
         .map(function (exercise) {
@@ -1659,7 +1656,7 @@
       margin: "sm",
       paddingAll: "10px",
       borderWidth: "2px",
-      borderColor: "#06C755",
+      borderColor: FLEX_THEME.border,
       cornerRadius: "12px",
       contents: [
         {
