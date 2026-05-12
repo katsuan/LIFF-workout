@@ -1535,14 +1535,15 @@
         roundNumber(set.estimated1rm || 0, 0) === roundNumber(exercise.maxEstimated1rm || 0, 0);
       return {
         type: "box",
-        layout: "baseline",
+        layout: "horizontal",
         spacing: "sm",
+        alignItems: "center",
         contents: [
           {
             type: "text",
             text: String(index + 1),
             size: "sm",
-            flex: 1
+            flex: 0
           },
           {
             type: "text",
@@ -1559,14 +1560,24 @@
           isMaxRmSet
             ? [
                 {
-                  type: "text",
-                  text: "MAX RM",
-                  size: "xs",
-                  color: "#FFFFFF",
+                  type: "box",
+                  layout: "vertical",
+                  flex: 0,
+                  paddingAll: "3px",
+                  paddingStart: "6px",
+                  paddingEnd: "6px",
                   backgroundColor: "#E92B2B",
-                  align: "center",
-                  gravity: "center",
-                  flex: 3
+                  cornerRadius: "2px",
+                  contents: [
+                    {
+                      type: "text",
+                      text: "MAX RM",
+                      size: "xs",
+                      color: "#FFFFFF",
+                      align: "center",
+                      wrap: false
+                    }
+                  ]
                 }
               ]
             : []
