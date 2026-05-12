@@ -286,6 +286,12 @@ button {
   margin-bottom: 14px;
 }
 
+.exercise-header > div,
+.exercise-selected-head > div {
+  min-width: 0;
+  flex: 1;
+}
+
 .exercise-title {
   margin: 0;
   font-size: 1.12rem;
@@ -411,6 +417,14 @@ button {
   gap: 10px;
 }
 
+.compact-action-button .action-icon {
+  display: none;
+}
+
+.compact-action-button .action-label {
+  display: inline;
+}
+
 .input-utility-card {
   display: grid;
   gap: 10px;
@@ -529,6 +543,17 @@ button {
 .preview-bubble-header-themed .preview-note,
 .preview-bubble-header-themed .preview-bubble-title {
   color: #ffffff;
+}
+
+.preview-header-meta {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.preview-note-user {
+  text-align: right;
 }
 
 .preview-bubble-title {
@@ -844,9 +869,15 @@ details.json-accordion summary::-webkit-details-marker {
   }
 
   .panel-head,
-  .exercise-header {
+  .panel-head {
     flex-direction: column;
     align-items: stretch;
+  }
+
+  .exercise-header,
+  .exercise-selected-head {
+    flex-direction: row;
+    align-items: center;
   }
 
   .button-row {
@@ -864,21 +895,28 @@ details.json-accordion summary::-webkit-details-marker {
     width: 100%;
   }
 
-  .exercise-header .danger-button {
-    width: 100%;
-  }
-
-  .set-summary {
-    flex-wrap: wrap;
-  }
-
   .set-fields {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
-  .exercise-selected-head {
-    flex-direction: column;
-    align-items: stretch;
+  .compact-action-button {
+    min-width: 44px;
+    min-height: 44px;
+    padding: 10px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 auto;
+  }
+
+  .compact-action-button .action-label {
+    display: none;
+  }
+
+  .compact-action-button .action-icon {
+    display: inline;
+    font-size: 1rem;
+    line-height: 1;
   }
 
   .history-actions {

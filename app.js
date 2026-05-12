@@ -1294,9 +1294,9 @@
         ? '      <p class="exercise-meta">エクササイズ ' + (exerciseIndex + 1) + "</p>"
         : "",
       "    </div>",
-      '    <button class="danger-button" data-action="remove-exercise" data-exercise-id="' +
+      '    <button class="danger-button compact-action-button" aria-label="種目削除" title="種目削除" data-action="remove-exercise" data-exercise-id="' +
         escapeHtml(exercise.exerciseId) +
-        '" type="button">種目削除</button>',
+        '" type="button"><span class="action-label">種目削除</span><span class="action-icon" aria-hidden="true">🗑</span></button>',
       "  </div>",
       '  <div class="form-grid">',
       !showExerciseFields
@@ -1311,9 +1311,9 @@
     return [
       '<div class="exercise-selected-head">',
       '  <div class="exercise-meta">セットとメモを入力</div>',
-      '  <button class="ghost-button" data-action="change-exercise-choice" data-exercise-id="' +
+      '  <button class="ghost-button compact-action-button" aria-label="種目変更" title="種目変更" data-action="change-exercise-choice" data-exercise-id="' +
         escapeHtml(exercise.exerciseId) +
-        '" type="button">種目を変更</button>',
+        '" type="button"><span class="action-label">種目変更</span><span class="action-icon" aria-hidden="true">✎</span></button>',
       "</div>",
       exercise.isCustom
         ? fieldTemplate({
@@ -1565,13 +1565,34 @@
   function buildWorkoutBubble(workout, exercises, bubbleIndex, bubbleCount) {
     const headerContents = [
       {
-        type: "text",
-        text: workout.date || "-",
-        color: "#ffffff",
-        weight: "bold",
-        size: "md",
-        wrap: true,
-        margin: "none"
+        type: "box",
+        layout: "baseline",
+        contents: [
+          {
+            type: "text",
+            text: workout.date || "-",
+            color: "#ffffff",
+            weight: "bold",
+            size: "md",
+            wrap: true,
+            flex: 3,
+            margin: "none"
+          }
+        ].concat(
+          shouldShowWorkoutUser(workout)
+            ? [
+                {
+                  type: "text",
+                  text: workout.user.displayName,
+                  color: "#FDF3EA",
+                  size: "sm",
+                  align: "end",
+                  wrap: true,
+                  flex: 2
+                }
+              ]
+            : []
+        )
       },
       {
         type: "text",
@@ -1583,17 +1604,6 @@
         margin: "sm"
       }
     ];
-
-    if (shouldShowWorkoutUser(workout)) {
-      headerContents.push({
-        type: "text",
-        text: workout.user.displayName,
-        color: "#FDF3EA",
-        size: "sm",
-        wrap: true,
-        margin: "sm"
-      });
-    }
 
     return {
       type: "bubble",
@@ -1618,9 +1628,20 @@
         layout: "vertical",
         paddingAll: "8px",
         spacing: "sm",
-        contents: exercises.map(function (exercise) {
-          return buildExerciseBoxForFlex(exercise);
-        })
+        contents: [
+          {
+            type: "box",
+            layout: "vertical",
+            paddingAll: "10px",
+            borderWidth: "2px",
+            borderColor: "#06C755",
+            cornerRadius: "16px",
+            spacing: "sm",
+            contents: exercises.map(function (exercise) {
+              return buildExerciseBoxForFlex(exercise);
+            })
+          }
+        ]
       },
       footer: {
         type: "box",
@@ -1779,19 +1800,23 @@
   }
 
   function renderBubblePreview(workout, bubble, index) {
-    const exerciseBoxes = bubble.body.contents;
+    const bodyWrapper =
+      bubble.body && bubble.body.contents && bubble.body.contents[0] ? bubble.body.contents[0] : null;
+    const exerciseBoxes = bodyWrapper && bodyWrapper.contents ? bodyWrapper.contents : [];
     const headerContents = bubble.header && bubble.header.contents ? bubble.header.contents : [];
-    const dateText = headerContents[0] ? headerContents[0].text : workout.date || "-";
+    const headerMetaBox = headerContents[0] && headerContents[0].contents ? headerContents[0] : null;
+    const dateText = headerMetaBox && headerMetaBox.contents[0] ? headerMetaBox.contents[0].text : workout.date || "-";
+    const userText =
+      headerMetaBox && headerMetaBox.contents[1] ? headerMetaBox.contents[1].text : "";
     const titleText = headerContents[1] ? headerContents[1].text : resolveWorkoutTitle(workout.title);
-    const userText = headerContents[2] ? headerContents[2].text : "";
     return [
       '<section class="preview-bubble">',
       '  <div class="preview-bubble-header preview-bubble-header-themed">',
-      "    <div>",
+      '    <div class="preview-header-meta">',
       '      <div class="preview-note">' + escapeHtml(dateText) + "</div>",
-      '      <div class="preview-bubble-title">' + escapeHtml(titleText) + "</div>",
-      userText ? '      <div class="preview-note">' + escapeHtml(userText) + "</div>" : "",
+      userText ? '      <div class="preview-note preview-note-user">' + escapeHtml(userText) + "</div>" : "",
       "    </div>",
+      '    <div class="preview-bubble-title">' + escapeHtml(titleText) + "</div>",
       "  </div>",
       exerciseBoxes
         .map(function (box) {
