@@ -1443,6 +1443,7 @@
       '      <p class="section-label">Stats</p>',
       '      <h2 class="panel-title">STATS</h2>',
       "    </div>",
+      '    <span class="badge">' + escapeHtml(String(previewExercises.length)) + "種目</span>",
       "  </div>",
       '  <div class="preview-grid">',
       previewExercises
@@ -1479,7 +1480,6 @@
   }
 
   function renderHistoryStatsSection() {
-    const latestWorkout = appState.history[0] || null;
     return [
       '<section class="panel-card">',
       '  <div class="panel-head">',
@@ -1489,12 +1489,7 @@
       "    </div>",
       '    <span class="badge">' + escapeHtml(String(appState.history.length)) + "件</span>",
       "  </div>",
-      '  <div class="history-grid">',
-      renderSummaryCard("履歴件数", String(appState.history.length)),
-      renderSummaryCard("最新1RM", latestWorkout ? formatMetric(findWorkoutMax1rm(latestWorkout), "kg", 1) : "-"),
-      renderSummaryCard("最新セット数", latestWorkout ? String(countValidSets(latestWorkout)) : "0"),
-      renderSummaryCard("最新タイトル", latestWorkout ? resolveWorkoutTitle(latestWorkout.title) : "-"),
-      "  </div>",
+      '  <p class="preview-note">各履歴カードから種目ごとの MAX RM を確認できます。</p>',
       "</section>"
     ].join("");
   }
@@ -1507,15 +1502,10 @@
       "      <h4>" + escapeHtml(resolveWorkoutTitle(workout.title)) + "</h4>",
       '      <p class="history-meta">' + escapeHtml(workout.date || "-") + "</p>",
       "    </div>",
+      '    <span class="badge">' + escapeHtml(String((workout.exercises || []).length)) + "種目</span>",
       '    <button class="pill-button" data-action="restore-history" data-workout-id="' +
         escapeHtml(workout.workoutId) +
         '" type="button">再入力</button>',
-      "  </div>",
-      '  <div class="history-grid">',
-      renderSummaryCard("種目数", String((workout.exercises || []).length)),
-      renderSummaryCard("有効セット数", String(countValidSets(workout))),
-      renderSummaryCard("最大RM", formatMetric(findWorkoutMax1rm(workout), "kg", 1)),
-      renderSummaryCard("日付", workout.date || "-"),
       "  </div>",
       renderWorkoutExerciseStats(workout, resolveWorkoutTitle(workout.title)),
       '  <div class="history-actions history-actions-end">',
