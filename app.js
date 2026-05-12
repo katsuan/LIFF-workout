@@ -1310,10 +1310,9 @@
   function renderSelectedExerciseFields(exercise) {
     return [
       '<div class="exercise-selected-head">',
-      '  <div class="exercise-meta">セットとメモを入力</div>',
       '  <button class="ghost-button compact-action-button" aria-label="種目変更" title="種目変更" data-action="change-exercise-choice" data-exercise-id="' +
       escapeHtml(exercise.exerciseId) +
-      '" type="button"><span class="action-label">種目変更</span><span class="action-icon" aria-hidden="true">✎</span></button>',
+      '" type="button"><span class="action-label">種目変更</span><span class="action-icon" aria-hidden="true">✏️</span></button>',
       "</div>",
       exercise.isCustom
         ? fieldTemplate({
