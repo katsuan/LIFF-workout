@@ -1135,6 +1135,16 @@
   function renderSetRow(exerciseId, set, setIndex) {
     return [
       '<div class="set-row">',
+      '  <div class="set-row-head">',
+      '    <span class="set-badge">Set ' +
+        (setIndex + 1) +
+        "</span>",
+      '    <button class="outline-button set-remove-button" data-action="remove-set" data-exercise-id="' +
+        escapeHtml(exerciseId) +
+        '" data-set-id="' +
+        escapeHtml(set.setId) +
+        '" type="button">削除</button>',
+      "  </div>",
       '  <div class="set-fields">',
       '    <label class="inline-field">',
       "      <span>重量 kg</span>",
@@ -1157,18 +1167,12 @@
         '" />',
       "    </label>",
       "  </div>",
-      '  <button class="outline-button" data-action="remove-set" data-exercise-id="' +
-        escapeHtml(exerciseId) +
-        '" data-set-id="' +
-        escapeHtml(set.setId) +
-        '" type="button">削除</button>',
-      "</div>",
-      '<div class="metric-row">',
-      "  <small class=\"metric-label\">Set " +
-        (setIndex + 1) +
-        " Volume</small><strong class=\"metric-value\">" +
+      '  <div class="set-summary">',
+      '    <small class="metric-label">Volume</small><strong class="metric-value">' +
         escapeHtml(formatMetric(set.volume || 0, "kg")) +
-        "</strong>",
+        "</strong><small class=\"metric-label\">推定1RM " +
+        escapeHtml(formatMetric(set.estimated1rm || 0, "kg", 1)) +
+        "</small>",
       "</div>"
     ].join("");
   }
