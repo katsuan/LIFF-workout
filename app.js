@@ -1330,6 +1330,7 @@
       '    <small class="metric-label">推定1RM</small><strong class="metric-value">' +
         escapeHtml(hasValidSet ? formatMetric(set.estimated1rm || 0, "kg", 1) : "-") +
         "</strong>",
+      "  </div>",
       "</div>"
     ].join("");
   }
