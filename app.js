@@ -457,7 +457,7 @@
       fieldTemplate({
         label: "日付",
         input:
-          '<input class="text-input" data-field="date" type="date" value="' +
+          '<input class="text-input date-input" data-field="date" type="date" value="' +
           escapeHtml(workout.date || "") +
           '" />'
       }),

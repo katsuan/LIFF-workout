@@ -253,6 +253,7 @@ button {
 .field-group {
   display: grid;
   gap: 8px;
+  min-width: 0;
 }
 
 .field-label {
@@ -264,12 +265,29 @@ button {
 .number-input,
 .textarea-input {
   width: 100%;
+  max-width: 100%;
   min-height: 48px;
   padding: 14px 16px;
   border: 1px solid var(--line);
   border-radius: 14px;
   background: var(--surface-strong);
   color: var(--text);
+}
+
+.date-input {
+  min-width: 0;
+  padding-right: 48px;
+  appearance: none;
+  -webkit-appearance: none;
+}
+
+.date-input::-webkit-date-and-time-value {
+  min-height: 1.4em;
+  text-align: left;
+}
+
+.date-input::-webkit-calendar-picker-indicator {
+  opacity: 0.88;
 }
 
 .number-input {
