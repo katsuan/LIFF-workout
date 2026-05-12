@@ -1,16 +1,19 @@
 :root {
-  --bg: #f3f7f2;
-  --bg-accent: #eef5ea;
+  --bg: #f7f4ef;
+  --bg-accent: #f4ebe0;
   --surface: #ffffff;
-  --surface-strong: #f7faf6;
+  --surface-strong: #fbf8f3;
   --text: #1f2a1f;
   --muted: #5d6c5d;
-  --line: #d7e0d4;
-  --primary: #1f8f54;
-  --primary-dark: #166a3e;
-  --primary-soft: #dff3e7;
-  --primary-tint: #f0f8f2;
+  --line: #e3d7ca;
+  --primary: #c96a2d;
+  --primary-dark: #8f4517;
+  --primary-soft: #f7dfcf;
+  --primary-tint: #fcf3ea;
   --secondary: #264653;
+  --secondary-soft: #e7eef2;
+  --share: #06c755;
+  --share-dark: #05a847;
   --danger: #d64545;
   --warning: #d79a16;
   --shadow: 0 18px 40px rgba(31, 42, 31, 0.08);
@@ -29,8 +32,8 @@ body {
   margin: 0;
   padding: 0;
   background:
-    radial-gradient(circle at top right, rgba(31, 143, 84, 0.12), transparent 28%),
-    linear-gradient(180deg, #fbfdf9 0%, var(--bg) 42%, #eef3ed 100%);
+    radial-gradient(circle at top right, rgba(201, 106, 45, 0.14), transparent 28%),
+    linear-gradient(180deg, #fdfbf8 0%, var(--bg) 42%, #f2ece4 100%);
   color: var(--text);
   font-family: var(--font-sans);
 }
@@ -108,7 +111,7 @@ button {
 }
 
 .status-chip.subtle {
-  background: rgba(38, 70, 83, 0.1);
+  background: var(--secondary-soft);
   color: var(--secondary);
 }
 
@@ -196,8 +199,8 @@ button {
 }
 
 .status-panel.info {
-  background: rgba(31, 143, 84, 0.12);
-  color: var(--primary-dark);
+  background: var(--secondary-soft);
+  color: var(--secondary);
 }
 
 .status-panel.warn {
@@ -650,7 +653,7 @@ details.json-accordion summary::-webkit-details-marker {
 }
 
 .action-button.primary {
-  background: linear-gradient(135deg, var(--primary) 0%, #2da86d 100%);
+  background: linear-gradient(135deg, var(--share) 0%, var(--share-dark) 100%);
   color: #ffffff;
 }
 
@@ -678,7 +681,7 @@ details.json-accordion summary::-webkit-details-marker {
   align-items: center;
   padding: 4px 10px;
   border-radius: 999px;
-  background: rgba(31, 143, 84, 0.1);
+  background: var(--primary-soft);
   color: var(--primary-dark);
   font-size: 0.78rem;
   font-weight: 800;

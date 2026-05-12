@@ -1218,7 +1218,7 @@
       header: {
         type: "box",
         layout: "vertical",
-        backgroundColor: "#1F8F54",
+        backgroundColor: "#264653",
         paddingAll: "16px",
         contents: [
           {
@@ -1242,7 +1242,7 @@
             text:
               ((workout.user && workout.user.displayName) || "anonymous") +
               (bubbleCount > 1 ? "  " + (bubbleIndex + 1) + "/" + bubbleCount : ""),
-            color: "#DFF3E7",
+            color: "#F7DFC8",
             size: "xs",
             margin: "sm"
           }
@@ -1283,7 +1283,7 @@
               spacing: "sm",
               margin: "md",
               paddingAll: "12px",
-              backgroundColor: "#F7FBF8",
+              backgroundColor: "#FCF7F2",
               cornerRadius: "12px",
               contents: [
                 {
