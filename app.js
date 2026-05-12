@@ -451,9 +451,9 @@
         bubbles.length === 1
           ? bubbles[0]
           : {
-              type: "carousel",
-              contents: bubbles
-            }
+            type: "carousel",
+            contents: bubbles
+          }
     };
   }
 
@@ -650,8 +650,8 @@
       validation.valid
         ? '<p class="preview-note">この内容で共有メッセージを生成できます。</p>'
         : '<p class="preview-note">共有前に入力タブで不足項目を埋めてください。' +
-          escapeHtml(validation.errors.join(" ")) +
-          "</p>",
+        escapeHtml(validation.errors.join(" ")) +
+        "</p>",
       bubbles
         .map(function (bubble, index) {
           return renderBubblePreview(shareableWorkout, bubble, index);
@@ -661,16 +661,16 @@
       renderExerciseMetrics(calculatedWorkout),
       isDebugModeEnabled()
         ? '<section class="panel-card">' +
-          '  <details class="json-accordion" ' +
-          (appState.ui.openJsonPreview ? "open" : "") +
-          ">" +
-          "    <summary>Flex JSON プレビュー</summary>" +
-          '    <p class="json-hint">デバッグ用のFlex JSON確認です。</p>' +
-          '    <pre class="json-preview">' +
-          escapeHtml(JSON.stringify(flexMessage, null, 2)) +
-          "</pre>" +
-          "  </details>" +
-          "</section>"
+        '  <details class="json-accordion" ' +
+        (appState.ui.openJsonPreview ? "open" : "") +
+        ">" +
+        "    <summary>Flex JSON プレビュー</summary>" +
+        '    <p class="json-hint">デバッグ用のFlex JSON確認です。</p>' +
+        '    <pre class="json-preview">' +
+        escapeHtml(JSON.stringify(flexMessage, null, 2)) +
+        "</pre>" +
+        "  </details>" +
+        "</section>"
         : "",
       "</div>"
     ].join("");
@@ -726,16 +726,16 @@
       "      <p>初期実装はモック表示です。将来は API アダプタへ差し替えできます。</p>",
       "    </div>",
       '    <span class="badge">' +
-        escapeHtml(appState.rankingPeriod === "week" ? "今週" : "今月") +
-        "</span>",
+      escapeHtml(appState.rankingPeriod === "week" ? "今週" : "今月") +
+      "</span>",
       "  </div>",
       '  <div class="ranking-tabs">',
       '    <button class="ranking-period-button ' +
-        (appState.rankingPeriod === "week" ? "is-active" : "") +
-        '" data-action="change-ranking-period" data-period="week" type="button">今週</button>',
+      (appState.rankingPeriod === "week" ? "is-active" : "") +
+      '" data-action="change-ranking-period" data-period="week" type="button">今週</button>',
       '    <button class="ranking-period-button ' +
-        (appState.rankingPeriod === "month" ? "is-active" : "") +
-        '" data-action="change-ranking-period" data-period="month" type="button">今月</button>',
+      (appState.rankingPeriod === "month" ? "is-active" : "") +
+      '" data-action="change-ranking-period" data-period="month" type="button">今月</button>',
       "  </div>",
       '  <div class="ranking-grid">',
       renderRankingCard("推定1RMランキング", periodData.estimated1rm, "kg"),
@@ -1283,20 +1283,20 @@
 
     return [
       '<section class="exercise-card" data-exercise-card-id="' +
-        escapeHtml(exercise.exerciseId) +
-        '">',
+      escapeHtml(exercise.exerciseId) +
+      '">',
       '  <div class="exercise-header">',
       "    <div>",
       '      <h3 class="exercise-title">' +
-        escapeHtml(exerciseTitle) +
-        "</h3>",
+      escapeHtml(exerciseTitle) +
+      "</h3>",
       !showExerciseFields
         ? '      <p class="exercise-meta">エクササイズ ' + (exerciseIndex + 1) + "</p>"
         : "",
       "    </div>",
       '    <button class="danger-button compact-action-button" aria-label="種目削除" title="種目削除" data-action="remove-exercise" data-exercise-id="' +
-        escapeHtml(exercise.exerciseId) +
-        '" type="button"><span class="action-label">種目削除</span><span class="action-icon" aria-hidden="true">🗑</span></button>',
+      escapeHtml(exercise.exerciseId) +
+      '" type="button"><span class="action-label">種目削除</span><span class="action-icon" aria-hidden="true">🗑</span></button>',
       "  </div>",
       '  <div class="form-grid">',
       !showExerciseFields
@@ -1312,19 +1312,19 @@
       '<div class="exercise-selected-head">',
       '  <div class="exercise-meta">セットとメモを入力</div>',
       '  <button class="ghost-button compact-action-button" aria-label="種目変更" title="種目変更" data-action="change-exercise-choice" data-exercise-id="' +
-        escapeHtml(exercise.exerciseId) +
-        '" type="button"><span class="action-label">種目変更</span><span class="action-icon" aria-hidden="true">✎</span></button>',
+      escapeHtml(exercise.exerciseId) +
+      '" type="button"><span class="action-label">種目変更</span><span class="action-icon" aria-hidden="true">✎</span></button>',
       "</div>",
       exercise.isCustom
         ? fieldTemplate({
-            label: "種目名",
-            input:
-              '<input class="text-input" data-exercise-field="name" data-exercise-id="' +
-              escapeHtml(exercise.exerciseId) +
-              '" type="text" placeholder="ベンチプレス / スクワット など" value="' +
-              escapeHtml(exercise.name || "") +
-              '" />'
-          })
+          label: "種目名",
+          input:
+            '<input class="text-input" data-exercise-field="name" data-exercise-id="' +
+            escapeHtml(exercise.exerciseId) +
+            '" type="text" placeholder="ベンチプレス / スクワット など" value="' +
+            escapeHtml(exercise.name || "") +
+            '" />'
+        })
         : "",
       '    <div class="sets-stack">',
       (exercise.sets || [])
@@ -1335,8 +1335,8 @@
       "    </div>",
       '    <div class="button-row">',
       '      <button class="mini-button" data-action="add-set" data-exercise-id="' +
-        escapeHtml(exercise.exerciseId) +
-        '" type="button">セット追加</button>',
+      escapeHtml(exercise.exerciseId) +
+      '" type="button">セット追加</button>',
       "    </div>",
       fieldTemplate({
         label: "種目メモ",
@@ -1356,41 +1356,41 @@
       '<div class="set-row">',
       '  <div class="set-row-head">',
       '    <span class="set-badge">Set ' +
-        (setIndex + 1) +
-        "</span>",
+      (setIndex + 1) +
+      "</span>",
       '    <div class="set-head-meta"><small class="metric-label">RM</small><strong class="metric-value" data-set-summary="estimated1rm" data-exercise-id="' +
-        escapeHtml(exerciseId) +
-        '" data-set-id="' +
-        escapeHtml(set.setId) +
-        '">' +
-        escapeHtml(hasValidSet ? formatMetric(set.estimated1rm || 0, "kg", 1) : "-") +
-        '</strong></div>',
+      escapeHtml(exerciseId) +
+      '" data-set-id="' +
+      escapeHtml(set.setId) +
+      '">' +
+      escapeHtml(hasValidSet ? formatMetric(set.estimated1rm || 0, "kg", 1) : "-") +
+      '</strong></div>',
       '    <button class="danger-button set-remove-button" data-action="remove-set" data-exercise-id="' +
-        escapeHtml(exerciseId) +
-        '" data-set-id="' +
-        escapeHtml(set.setId) +
-        '" type="button">削除</button>',
+      escapeHtml(exerciseId) +
+      '" data-set-id="' +
+      escapeHtml(set.setId) +
+      '" type="button">削除</button>',
       "  </div>",
       '  <div class="set-fields">',
       '    <label class="inline-field">',
       "      <span>重量 kg</span>",
       '      <input class="number-input" data-set-field="weight" data-exercise-id="' +
-        escapeHtml(exerciseId) +
-        '" data-set-id="' +
-        escapeHtml(set.setId) +
-        '" type="number" inputmode="decimal" step="0.5" min="0" placeholder="0" value="' +
-        escapeHtml(String(set.weight ?? "")) +
-        '" />',
+      escapeHtml(exerciseId) +
+      '" data-set-id="' +
+      escapeHtml(set.setId) +
+      '" type="number" inputmode="decimal" step="0.5" min="0" placeholder="0" value="' +
+      escapeHtml(String(set.weight ?? "")) +
+      '" />',
       "    </label>",
       '    <label class="inline-field">',
       "      <span>回数 reps</span>",
       '      <input class="number-input" data-set-field="reps" data-exercise-id="' +
-        escapeHtml(exerciseId) +
-        '" data-set-id="' +
-        escapeHtml(set.setId) +
-        '" type="number" inputmode="numeric" step="1" min="0" placeholder="0" value="' +
-        escapeHtml(String(set.reps ?? "")) +
-        '" />',
+      escapeHtml(exerciseId) +
+      '" data-set-id="' +
+      escapeHtml(set.setId) +
+      '" type="number" inputmode="numeric" step="1" min="0" placeholder="0" value="' +
+      escapeHtml(String(set.reps ?? "")) +
+      '" />',
       "    </label>",
       "  </div>",
       "</div>"
@@ -1414,10 +1414,10 @@
 
     const summaryNode = document.querySelector(
       '[data-set-summary="estimated1rm"][data-exercise-id="' +
-        cssEscape(exerciseId) +
-        '"][data-set-id="' +
-        cssEscape(setId) +
-        '"]'
+      cssEscape(exerciseId) +
+      '"][data-set-id="' +
+      cssEscape(setId) +
+      '"]'
     );
     if (!summaryNode) {
       return;
@@ -1452,11 +1452,11 @@
             '<article class="summary-card">',
             "  <small>" + escapeHtml(exercise.name || "未入力種目") + "</small>",
             '  <strong class="summary-value">' +
-              escapeHtml(formatMetric(exercise.maxEstimated1rm || 0, "kg", 1)) +
-              "</strong>",
+            escapeHtml(formatMetric(exercise.maxEstimated1rm || 0, "kg", 1)) +
+            "</strong>",
             '  <div class="history-meta">Max RM' +
-              (exercise.primaryMuscle ? " / " + escapeHtml(exercise.primaryMuscle) : "") +
-              "</div>",
+            (exercise.primaryMuscle ? " / " + escapeHtml(exercise.primaryMuscle) : "") +
+            "</div>",
             "</article>"
           ].join("");
         })
@@ -1500,19 +1500,19 @@
       '  <div class="history-card-head">',
       '    <div class="history-card-copy">',
       '      <p class="history-meta history-meta-inline">' +
-        escapeHtml(workout.date || "-") +
-        " ・ " +
-        escapeHtml(String((workout.exercises || []).length)) +
-        "種目</p>",
+      escapeHtml(workout.date || "-") +
+      " ・ " +
+      escapeHtml(String((workout.exercises || []).length)) +
+      "種目</p>",
       "      <h4>" + escapeHtml(resolveWorkoutTitle(workout.title)) + "</h4>",
       "    </div>",
       '    <div class="history-actions history-actions-inline">',
       '      <button class="pill-button" data-action="restore-history" data-workout-id="' +
-        escapeHtml(workout.workoutId) +
-        '" type="button">再入力</button>',
+      escapeHtml(workout.workoutId) +
+      '" type="button">再入力</button>',
       '      <button class="danger-button" data-action="delete-history" data-workout-id="' +
-        escapeHtml(workout.workoutId) +
-        '" type="button">履歴削除</button>',
+      escapeHtml(workout.workoutId) +
+      '" type="button">履歴削除</button>',
       "    </div>",
       "  </div>",
       renderWorkoutExerciseStats(workout),
@@ -1538,8 +1538,8 @@
             '<article class="summary-card">',
             "  <small>" + escapeHtml(exercise.name || "未入力種目") + "</small>",
             '  <strong class="summary-value">' +
-              escapeHtml(formatMetric(exercise.maxEstimated1rm || 0, "kg", 1)) +
-              "</strong>",
+            escapeHtml(formatMetric(exercise.maxEstimated1rm || 0, "kg", 1)) +
+            "</strong>",
             "</article>"
           ].join("");
         })
@@ -1568,16 +1568,16 @@
         ].concat(
           shouldShowWorkoutUser(workout)
             ? [
-                {
-                  type: "text",
-                  text: workout.user.displayName,
-                  color: "#FDF3EA",
-                  size: "sm",
-                  align: "end",
-                  wrap: true,
-                  flex: 2
-                }
-              ]
+              {
+                type: "text",
+                text: workout.user.displayName,
+                color: "#FDF3EA",
+                size: "sm",
+                align: "end",
+                wrap: true,
+                flex: 2
+              }
+            ]
             : []
         )
       },
@@ -1683,14 +1683,14 @@
       ].concat(buildSetLinesForFlex(exercise)).concat(
         exercise.memo
           ? [
-              {
-                type: "text",
-                text: truncateText(exercise.memo, 42),
-                size: "xs",
-                color: FLEX_THEME.textMuted,
-                wrap: true
-              }
-            ]
+            {
+              type: "text",
+              text: truncateText(exercise.memo, 42),
+              size: "xs",
+              color: FLEX_THEME.textMuted,
+              wrap: true
+            }
+          ]
           : []
       )
     };
@@ -1723,27 +1723,27 @@
         ].concat(
           isMaxRmSet
             ? [
-                {
-                  type: "box",
-                  layout: "vertical",
-                  flex: 0,
-                  paddingAll: "3px",
-                  paddingStart: "6px",
-                  paddingEnd: "6px",
-                  backgroundColor: FLEX_THEME.accent,
-                  cornerRadius: "2px",
-                  contents: [
-                    {
-                      type: "text",
-                      text: "MAX RM",
-                      size: "xs",
-                      color: "#FFFFFF",
-                      align: "center",
-                      wrap: false
-                    }
-                  ]
-                }
-              ]
+              {
+                type: "box",
+                layout: "vertical",
+                flex: 0,
+                paddingAll: "3px",
+                paddingStart: "6px",
+                paddingEnd: "6px",
+                backgroundColor: FLEX_THEME.accent,
+                cornerRadius: "2px",
+                contents: [
+                  {
+                    type: "text",
+                    text: "MAX RM",
+                    size: "xs",
+                    color: "#FFFFFF",
+                    align: "center",
+                    wrap: false
+                  }
+                ]
+              }
+            ]
             : []
         )
       };
@@ -1844,8 +1844,8 @@
         })
         .join(""),
       '  <div class="preview-bubble-footer">' +
-        escapeHtml("Powered by " + (APP_CONFIG.APP_NAME || "Workout Share")) +
-        "</div>",
+      escapeHtml("Powered by " + (APP_CONFIG.APP_NAME || "Workout Share")) +
+      "</div>",
       "</section>"
     ].join("");
   }
@@ -1858,23 +1858,23 @@
       "  </header>",
       rows && rows.length
         ? '  <div class="ranking-stack">' +
-          rows
-            .map(function (row, index) {
-              return [
-                '<div class="ranking-row">',
-                '  <div><strong>#' +
-                  (index + 1) +
-                  "</strong> " +
-                  escapeHtml(row.name) +
-                  '<div class="ranking-meta">' +
-                  escapeHtml(row.label || "") +
-                  "</div></div>",
-                '  <strong>' + escapeHtml(formatMetric(row.value, unit, 1)) + "</strong>",
-                "</div>"
-              ].join("");
-            })
-            .join("") +
-          "  </div>"
+        rows
+          .map(function (row, index) {
+            return [
+              '<div class="ranking-row">',
+              '  <div><strong>#' +
+              (index + 1) +
+              "</strong> " +
+              escapeHtml(row.name) +
+              '<div class="ranking-meta">' +
+              escapeHtml(row.label || "") +
+              "</div></div>",
+              '  <strong>' + escapeHtml(formatMetric(row.value, unit, 1)) + "</strong>",
+              "</div>"
+            ].join("");
+          })
+          .join("") +
+        "  </div>"
         : '<div class="empty-state">ランキングデータはまだありません。</div>',
       "</article>"
     ].join("");
@@ -1918,29 +1918,26 @@
 
     const candidateExercises = exercise.selectionMuscle
       ? EXERCISE_CATALOG.filter(function (item) {
-          return item.muscle === exercise.selectionMuscle;
-        })
+        return item.muscle === exercise.selectionMuscle;
+      })
       : [];
 
     const exerciseCards = candidateExercises.length
       ? candidateExercises
-          .map(function (item) {
-            return (
-              '<button class="quick-exercise-button" data-action="choose-exercise-card" data-exercise-id="' +
-              escapeHtml(exercise.exerciseId) +
-              '" data-catalog-id="' +
-              escapeHtml(item.id) +
-              '" type="button">' +
-              '<strong>' +
-              escapeHtml(item.name) +
-              "</strong>" +
-              '<span>' +
-              escapeHtml(item.muscle) +
-              "</span>" +
-              "</button>"
-            );
-          })
-          .join("")
+        .map(function (item) {
+          return (
+            '<button class="quick-exercise-button" data-action="choose-exercise-card" data-exercise-id="' +
+            escapeHtml(exercise.exerciseId) +
+            '" data-catalog-id="' +
+            escapeHtml(item.id) +
+            '" type="button">' +
+            '<strong>' +
+            escapeHtml(item.name) +
+            "</strong>" +
+            "</button>"
+          );
+        })
+        .join("")
       : exercise.selectionMuscle
         ? '<div class="empty-state compact">この部位には候補がまだありません。手入力で追加できます。</div>'
         : '<div class="empty-state compact">先に部位を選ぶと、候補の種目が表示されます。</div>';
@@ -1956,8 +1953,8 @@
       '    <div class="quick-exercise-grid">' + exerciseCards + "</div>",
       exercise.selectionMuscle
         ? '    <div class="button-row"><button class="ghost-button" data-action="start-custom-exercise" data-exercise-id="' +
-          escapeHtml(exercise.exerciseId) +
-          '" type="button">候補にない種目を入力</button></div>'
+        escapeHtml(exercise.exerciseId) +
+        '" type="button">候補にない種目を入力</button></div>'
         : "",
       "  </div>",
       "</div>"
