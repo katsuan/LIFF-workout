@@ -1,5 +1,5 @@
 window.APP_CONFIG = {
-  LIFF_ID: "YOUR_LIFF_ID",
+  LIFF_ID: "2009927582-2isjfmkk",
   APP_NAME: "LIFF Workout Share",
   DEFAULT_GROUP_KEY: "default-group",
   FEATURE_FLAGS: {
