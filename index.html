@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <title>LIFF Workout Share</title>
+    <link rel="stylesheet" href="./style.css" />
+    <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+    <script src="./config.js"></script>
+    <script src="./app.js" defer></script>
+  </head>
+  <body>
+    <div class="app-shell">
+      <header class="app-header">
+        <div>
+          <p class="eyebrow">LINE LIFF Workout</p>
+          <h1 id="app-name">LIFF Workout Share</h1>
+        </div>
+        <div class="header-meta">
+          <span class="status-chip" id="liff-mode-chip">Preview Mode</span>
+          <span class="status-chip subtle" id="profile-chip">anonymous</span>
+        </div>
+      </header>
+
+      <section class="hero-card">
+        <div>
+          <p class="hero-label">Today's Session</p>
+          <h2>ワークアウトを入力して、そのままLINE共有</h2>
+          <p class="hero-copy">
+            LIFFが使えない環境でも、Flex JSONのプレビューとコピーまで行えます。
+          </p>
+        </div>
+        <div class="hero-stats" id="hero-stats"></div>
+      </section>
+
+      <section class="status-panel" id="status-panel" aria-live="polite"></section>
+
+      <nav class="tab-nav" aria-label="メインタブ">
+        <button class="tab-button is-active" data-tab="input" type="button">入力</button>
+        <button class="tab-button" data-tab="preview" type="button">プレビュー</button>
+        <button class="tab-button" data-tab="history" type="button">履歴</button>
+        <button class="tab-button" data-tab="ranking" type="button">ランキング</button>
+      </nav>
+
+      <main class="tab-panels">
+        <section class="tab-panel is-active" id="tab-input"></section>
+        <section class="tab-panel" id="tab-preview" hidden></section>
+        <section class="tab-panel" id="tab-history" hidden></section>
+        <section class="tab-panel" id="tab-ranking" hidden></section>
+      </main>
+    </div>
+
+    <div class="action-bar">
+      <button class="action-button ghost" id="add-exercise-button" type="button">種目追加</button>
+      <button class="action-button ghost" id="preview-button" type="button">プレビュー</button>
+      <button class="action-button secondary" id="copy-json-button" type="button">Flex JSONコピー</button>
+      <button class="action-button primary" id="share-button" type="button">LINEで共有</button>
+    </div>
+  </body>
+</html>
