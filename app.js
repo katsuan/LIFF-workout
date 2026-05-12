@@ -258,10 +258,12 @@
       applyCatalogToExercise(exercise, catalogId);
     }
     appState.workout.exercises.push(exercise);
+    appState.activeTab = "input";
     touchWorkout();
     renderInput();
     renderPreview();
     renderShell();
+    scrollToPanel("input");
   }
 
   function removeExercise(exerciseId) {
@@ -456,10 +458,6 @@
       errors.push("日付を入力してください。");
     }
 
-    if (!sanitizedWorkout.title.trim()) {
-      errors.push("ワークアウトタイトルを入力してください。");
-    }
-
     if (!sanitizedWorkout.exercises.length) {
       errors.push("共有対象になる種目とセットを1つ以上入力してください。");
     }
@@ -579,6 +577,7 @@
     return hydrateWorkout(
       Object.assign({}, workout, {
         workoutId: generateId("workout"),
+        title: resolveWorkoutTitle(workout.title),
         createdAt: now,
         updatedAt: now
       })
@@ -608,7 +607,7 @@
       fieldTemplate({
         label: "ワークアウトタイトル",
         input:
-          '<input class="text-input" data-field="title" type="text" placeholder="WorkOut / 背中トレ など" value="' +
+          '<input class="text-input" data-field="title" type="text" placeholder="空欄なら WorkOut / 背中トレ など" value="' +
           escapeHtml(workout.title || "") +
           '" />'
       }),
@@ -1078,6 +1077,20 @@
     }
   }
 
+  function getPanelElement(tab) {
+    switch (tab) {
+      case "preview":
+        return elements.tabPreview;
+      case "history":
+        return elements.tabHistory;
+      case "ranking":
+        return elements.tabRanking;
+      case "input":
+      default:
+        return elements.tabInput;
+    }
+  }
+
   function renderStatus() {
     if (!appState.status.message) {
       elements.statusPanel.className = "status-panel";
@@ -1100,6 +1113,7 @@
       appState.activeTab = "input";
       renderActiveTab();
       renderShell();
+      scrollToPanel("input");
       return;
     }
     appState.activeTab = tab;
@@ -1108,15 +1122,16 @@
     }
     renderActiveTab();
     renderShell();
+    scrollToPanel(tab);
   }
 
   function setPanelVisibility(tabName, element) {
     if (!element) {
       return;
     }
-    const isActive = appState.activeTab === tabName;
-    element.hidden = !isActive;
-    element.classList.toggle("is-active", isActive);
+    const shouldShow = tabName === "ranking" ? isRankingEnabled() : true;
+    element.hidden = !shouldShow;
+    element.classList.toggle("is-active", appState.activeTab === tabName);
   }
 
   function updateActionBar() {
@@ -1124,13 +1139,23 @@
       return;
     }
 
-    const isInputTab = appState.activeTab === "input";
-    elements.addExerciseButton.classList.toggle("is-hidden", !isInputTab);
-    elements.previewButton.classList.toggle("is-hidden", appState.activeTab === "preview");
     elements.copyJsonButton.hidden = !isDebugModeEnabled();
     elements.copyJsonButton.textContent = appState.liff.shareAvailable
       ? "Flex JSONコピー"
       : "デバッグコピー";
+  }
+
+  function scrollToPanel(tab) {
+    const panel = getPanelElement(tab);
+    if (!panel || panel.hidden || typeof panel.scrollIntoView !== "function") {
+      return;
+    }
+    window.requestAnimationFrame(function () {
+      panel.scrollIntoView({
+        behavior: "smooth",
+        block: "start"
+      });
+    });
   }
 
   function syncWorkoutUser() {
@@ -1245,6 +1270,11 @@
       totalVolume: roundNumber(totalVolume, 1),
       updatedAt: new Date().toISOString()
     });
+  }
+
+  function resolveWorkoutTitle(title) {
+    const normalizedTitle = String(title || "").trim();
+    return normalizedTitle || "WorkOut";
   }
 
   function renderExerciseCard(exercise, exerciseIndex) {

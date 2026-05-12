@@ -170,6 +170,12 @@ button {
 
 .tab-panel {
   display: block;
+  scroll-margin-top: 84px;
+}
+
+.tab-panels {
+  display: grid;
+  gap: 18px;
 }
 
 .panel-card,
