@@ -189,6 +189,10 @@ button {
   padding: 16px;
 }
 
+.input-card {
+  background: linear-gradient(180deg, rgba(252, 243, 234, 0.98) 0%, rgba(255, 249, 244, 0.96) 100%);
+}
+
 .panel-head {
   display: flex;
   align-items: center;
@@ -321,6 +325,13 @@ button {
   gap: 12px;
 }
 
+.set-head-meta {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 8px;
+  margin-left: auto;
+}
+
 .set-fields {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -353,16 +364,6 @@ button {
 .set-remove-button {
   min-height: 38px;
   padding: 8px 12px;
-}
-
-.set-summary {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-  padding: 10px 12px;
-  border-radius: 14px;
-  background: var(--primary-tint);
 }
 
 .button-row {
@@ -404,6 +405,22 @@ button {
   align-items: center;
   justify-content: space-between;
   gap: 10px;
+}
+
+.input-utility-card {
+  display: grid;
+  gap: 10px;
+  padding: 12px 14px;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.62);
+  border: 1px solid rgba(201, 106, 45, 0.14);
+}
+
+.input-utility-title {
+  color: var(--primary-dark);
+  font-size: 0.82rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
 }
 
 .quick-exercise-button {
@@ -487,6 +504,7 @@ button {
 .preview-bubble {
   padding: 18px;
   border: 2px solid var(--share);
+  background: #ffffff;
 }
 
 .preview-bubble-header {
@@ -563,6 +581,14 @@ button {
   padding: 16px;
 }
 
+.history-card-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
 .history-card header,
 .ranking-card header {
   margin-bottom: 10px;
@@ -578,6 +604,14 @@ button {
 .history-actions .pill-button,
 .history-actions .danger-button {
   flex: 1;
+}
+
+.history-actions-end {
+  justify-content: flex-end;
+}
+
+.history-actions-end .danger-button {
+  flex: 0 0 auto;
 }
 
 .ranking-tabs {

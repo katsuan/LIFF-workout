@@ -596,7 +596,7 @@
     const workout = appState.workout;
     const html = [
       '<div class="input-stack">',
-      '  <section class="panel-card">',
+      '  <section class="panel-card input-card">',
       '    <div class="panel-head">',
       '      <h2 class="panel-title">記録入力</h2>',
       "    </div>",
@@ -617,10 +617,7 @@
       }),
       "    </div>",
       '    <p class="helper-text">空セット、重量未入力、回数未入力のセットは共有内容から自動除外されます。</p>',
-      '    <div class="button-row">',
-      '      <button class="pill-button" data-action="sample-workout" type="button">サンプル入力</button>',
-      '      <button class="danger-button" data-action="reset-workout" type="button">入力リセット</button>',
-      "    </div>",
+      renderInputUtilityActions(),
       "  </section>",
       workout.exercises
         .map(function (exercise, exerciseIndex) {
@@ -646,18 +643,9 @@
       '  <section class="panel-card">',
       '    <div class="panel-head">',
       "      <div>",
-      '        <h2 class="panel-title">送信内容プレビュー</h2>',
-      "        <p>送信に使う内容をアプリ内で確認できます。実際のLINE表示とは一部異なる場合があります。</p>",
+      '        <h2 class="panel-title">送信内容</h2>',
+      "        <p>生成されるメッセージ内容の確認用です。最終的な表示はLINE上で確認してください。</p>",
       "      </div>",
-      '      <span class="badge">' +
-        escapeHtml(bubbles.length === 1 ? "bubble" : "carousel " + bubbles.length + "件") +
-        "</span>",
-      "    </div>",
-      '    <div class="summary-grid">',
-      renderSummaryCard("日付", calculatedWorkout.date || "-"),
-      renderSummaryCard("共有対象種目", String(shareableWorkout.exercises.length)),
-      renderSummaryCard("タイトル", calculatedWorkout.title || "WorkOut"),
-      renderSummaryCard("有効セット数", String(countValidSets(calculatedWorkout))),
       "    </div>",
       validation.valid
         ? '<p class="preview-note">この内容で共有メッセージを生成できます。</p>'
@@ -665,12 +653,12 @@
           escapeHtml(validation.errors.join(" ")) +
           "</p>",
       "  </section>",
-      renderExerciseMetrics(calculatedWorkout),
       bubbles
         .map(function (bubble, index) {
           return renderBubblePreview(shareableWorkout, bubble, index);
         })
         .join(""),
+      renderExerciseMetrics(calculatedWorkout),
       isDebugModeEnabled()
         ? '<section class="panel-card">' +
           '  <details class="json-accordion" ' +
@@ -706,30 +694,10 @@
 
     const html = [
       '<div class="history-stack">',
+      renderHistoryStatsSection(),
       appState.history
         .map(function (workout) {
-          return [
-            '<article class="history-card">',
-            "  <header>",
-            "    <h4>" + escapeHtml(workout.title || "WorkOut") + "</h4>",
-            '    <p class="history-meta">' +
-              escapeHtml(workout.date || "-") +
-              "</p>",
-            "  </header>",
-            '  <div class="history-grid">',
-            renderSummaryCard("日付", workout.date || "-"),
-            renderSummaryCard("種目数", String((workout.exercises || []).length)),
-            "  </div>",
-            '  <div class="history-actions">',
-            '    <button class="pill-button" data-action="restore-history" data-workout-id="' +
-              escapeHtml(workout.workoutId) +
-              '" type="button">再入力</button>',
-            '    <button class="danger-button" data-action="delete-history" data-workout-id="' +
-              escapeHtml(workout.workoutId) +
-              '" type="button">履歴削除</button>',
-            "  </div>",
-            "</article>"
-          ].join("");
+          return renderHistoryCard(workout);
         })
         .join(""),
       "</div>"
@@ -902,6 +870,9 @@
     }
 
     switch (action) {
+      case "open-history-input":
+        setActiveTab("history");
+        break;
       case "sample-workout":
         applySampleWorkout();
         break;
@@ -1306,6 +1277,9 @@
 
   function renderExerciseCard(exercise, exerciseIndex) {
     const showExerciseFields = Boolean(exercise.catalogId || exercise.isCustom);
+    const exerciseTitle = exercise.isCustom
+      ? "種目名を入力"
+      : exercise.name || "種目を選択";
 
     return [
       '<section class="exercise-card" data-exercise-card-id="' +
@@ -1314,7 +1288,7 @@
       '  <div class="exercise-header">',
       "    <div>",
       '      <h3 class="exercise-title">' +
-        escapeHtml(exercise.name || "種目を選択") +
+        escapeHtml(exerciseTitle) +
         "</h3>",
       !showExerciseFields
         ? '      <p class="exercise-meta">エクササイズ ' + (exerciseIndex + 1) + "</p>"
@@ -1336,9 +1310,7 @@
   function renderSelectedExerciseFields(exercise) {
     return [
       '<div class="exercise-selected-head">',
-      exercise.isCustom && exercise.primaryMuscle
-        ? '  <div class="exercise-meta">部位: ' + escapeHtml(exercise.primaryMuscle) + "</div>"
-        : '  <div class="exercise-meta">セットとメモを入力</div>',
+      '  <div class="exercise-meta">セットとメモを入力</div>',
       '  <button class="ghost-button" data-action="change-exercise-choice" data-exercise-id="' +
         escapeHtml(exercise.exerciseId) +
         '" type="button">種目を変更</button>',
@@ -1386,7 +1358,14 @@
       '    <span class="set-badge">Set ' +
         (setIndex + 1) +
         "</span>",
-      '    <button class="outline-button set-remove-button" data-action="remove-set" data-exercise-id="' +
+      '    <div class="set-head-meta"><small class="metric-label">RM</small><strong class="metric-value" data-set-summary="estimated1rm" data-exercise-id="' +
+        escapeHtml(exerciseId) +
+        '" data-set-id="' +
+        escapeHtml(set.setId) +
+        '">' +
+        escapeHtml(hasValidSet ? formatMetric(set.estimated1rm || 0, "kg", 1) : "-") +
+        '</strong></div>',
+      '    <button class="danger-button set-remove-button" data-action="remove-set" data-exercise-id="' +
         escapeHtml(exerciseId) +
         '" data-set-id="' +
         escapeHtml(set.setId) +
@@ -1413,15 +1392,6 @@
         escapeHtml(String(set.reps ?? "")) +
         '" />',
       "    </label>",
-      "  </div>",
-      '  <div class="set-summary">',
-      '    <small class="metric-label">推定1RM</small><strong class="metric-value" data-set-summary="estimated1rm" data-exercise-id="' +
-        escapeHtml(exerciseId) +
-        '" data-set-id="' +
-        escapeHtml(set.setId) +
-        '">' +
-        escapeHtml(hasValidSet ? formatMetric(set.estimated1rm || 0, "kg", 1) : "-") +
-        "</strong>",
       "  </div>",
       "</div>"
     ].join("");
@@ -1470,8 +1440,8 @@
       '<section class="panel-card">',
       '  <div class="panel-head">',
       "    <div>",
-      '      <p class="section-label">Exercise Stats</p>',
-      '      <h2 class="panel-title">種目別サマリー</h2>',
+      '      <p class="section-label">Stats</p>',
+      '      <h2 class="panel-title">STATS</h2>',
       "    </div>",
       "  </div>",
       '  <div class="preview-grid">',
@@ -1492,6 +1462,67 @@
         .join(""),
       "  </div>",
       "</section>"
+    ].join("");
+  }
+
+  function renderInputUtilityActions() {
+    return [
+      '<div class="input-utility-card">',
+      '  <div class="input-utility-title">設定</div>',
+      '  <div class="button-row">',
+      '    <button class="outline-button" data-action="open-history-input" type="button">履歴入力</button>',
+      '    <button class="pill-button" data-action="sample-workout" type="button">サンプル入力</button>',
+      '    <button class="danger-button" data-action="reset-workout" type="button">入力リセット</button>',
+      "  </div>",
+      "</div>"
+    ].join("");
+  }
+
+  function renderHistoryStatsSection() {
+    const latestWorkout = appState.history[0] || null;
+    return [
+      '<section class="panel-card">',
+      '  <div class="panel-head">',
+      "    <div>",
+      '      <p class="section-label">History Stats</p>',
+      '      <h2 class="panel-title">履歴とSTATS</h2>',
+      "    </div>",
+      '    <span class="badge">' + escapeHtml(String(appState.history.length)) + "件</span>",
+      "  </div>",
+      '  <div class="history-grid">',
+      renderSummaryCard("履歴件数", String(appState.history.length)),
+      renderSummaryCard("最新1RM", latestWorkout ? formatMetric(findWorkoutMax1rm(latestWorkout), "kg", 1) : "-"),
+      renderSummaryCard("最新セット数", latestWorkout ? String(countValidSets(latestWorkout)) : "0"),
+      renderSummaryCard("最新タイトル", latestWorkout ? resolveWorkoutTitle(latestWorkout.title) : "-"),
+      "  </div>",
+      "</section>"
+    ].join("");
+  }
+
+  function renderHistoryCard(workout) {
+    return [
+      '<article class="history-card">',
+      '  <div class="history-card-head">',
+      "    <div>",
+      "      <h4>" + escapeHtml(resolveWorkoutTitle(workout.title)) + "</h4>",
+      '      <p class="history-meta">' + escapeHtml(workout.date || "-") + "</p>",
+      "    </div>",
+      '    <button class="pill-button" data-action="restore-history" data-workout-id="' +
+        escapeHtml(workout.workoutId) +
+        '" type="button">再入力</button>',
+      "  </div>",
+      '  <div class="history-grid">',
+      renderSummaryCard("種目数", String((workout.exercises || []).length)),
+      renderSummaryCard("有効セット数", String(countValidSets(workout))),
+      renderSummaryCard("最大RM", formatMetric(findWorkoutMax1rm(workout), "kg", 1)),
+      renderSummaryCard("日付", workout.date || "-"),
+      "  </div>",
+      '  <div class="history-actions history-actions-end">',
+      '    <button class="danger-button" data-action="delete-history" data-workout-id="' +
+        escapeHtml(workout.workoutId) +
+        '" type="button">履歴削除</button>',
+      "  </div>",
+      "</article>"
     ].join("");
   }
 
@@ -1581,7 +1612,7 @@
       margin: "sm",
       paddingAll: "10px",
       borderWidth: "2px",
-      borderColor: FLEX_THEME.border,
+      borderColor: "#06C755",
       cornerRadius: "12px",
       contents: [
         {
@@ -1610,7 +1641,7 @@
           ? [
               {
                 type: "text",
-                text: "メモ: " + truncateText(exercise.memo, 42),
+                text: truncateText(exercise.memo, 42),
                 size: "xs",
                 color: FLEX_THEME.textMuted,
                 wrap: true
@@ -1725,7 +1756,6 @@
       '      <div class="preview-bubble-title">' + escapeHtml(titleText) + "</div>",
       userText ? '      <div class="preview-note">' + escapeHtml(userText) + "</div>" : "",
       "    </div>",
-      '    <span class="badge">Bubble ' + (index + 1) + "</span>",
       "  </div>",
       exerciseBoxes
         .map(function (box) {
