@@ -606,15 +606,17 @@
       '    <div class="form-grid two-col">',
       fieldTemplate({
         label: "日付",
+        className: "tile-field",
         input:
-          '<input class="text-input date-input" data-field="date" type="date" value="' +
+          '<input class="text-input date-input" aria-label="日付" data-field="date" type="date" value="' +
           escapeHtml(workout.date || "") +
           '" />'
       }),
       fieldTemplate({
         label: "ワークアウトタイトル",
+        className: "tile-field",
         input:
-          '<input class="text-input" data-field="title" type="text" placeholder="空欄なら WorkOut / 背中トレ など" value="' +
+          '<input class="text-input" aria-label="ワークアウトタイトル" data-field="title" type="text" placeholder="空欄なら WorkOut / 背中トレ など" value="' +
           escapeHtml(workout.title || "") +
           '" />'
       }),
@@ -1390,8 +1392,9 @@
       exercise.isCustom
         ? fieldTemplate({
             label: "種目名",
+            className: "tile-field",
             input:
-              '<input class="text-input" data-exercise-field="name" data-exercise-id="' +
+              '<input class="text-input" aria-label="種目名" data-exercise-field="name" data-exercise-id="' +
               escapeHtml(exercise.exerciseId) +
               '" type="text" placeholder="ベンチプレス / スクワット など" value="' +
               escapeHtml(exercise.name || "") +
@@ -1451,9 +1454,9 @@
       }),
       "  </div>",
       '  <div class="set-fields">',
-      '    <label class="inline-field">',
+      '    <label class="inline-field tile-field compact-tile-field">',
       "      <span>重量 kg</span>",
-      '      <input class="number-input" data-set-field="weight" data-exercise-id="' +
+      '      <input class="number-input" aria-label="重量 kg" data-set-field="weight" data-exercise-id="' +
       escapeHtml(exerciseId) +
       '" data-set-id="' +
       escapeHtml(set.setId) +
@@ -1461,9 +1464,9 @@
       escapeHtml(String(set.weight ?? "")) +
       '" />',
       "    </label>",
-      '    <label class="inline-field">',
+      '    <label class="inline-field tile-field compact-tile-field">',
       "      <span>回数 reps</span>",
-      '      <input class="number-input" data-set-field="reps" data-exercise-id="' +
+      '      <input class="number-input" aria-label="回数 reps" data-set-field="reps" data-exercise-id="' +
       escapeHtml(exerciseId) +
       '" data-set-id="' +
       escapeHtml(set.setId) +
@@ -2089,7 +2092,9 @@
 
   function fieldTemplate(options) {
     return [
-      '<label class="field-group">',
+      '<label class="field-group' +
+        (options.className ? " " + escapeHtml(options.className) : "") +
+        '">',
       '  <span class="field-label">' + escapeHtml(options.label) + "</span>",
       "  " + options.input,
       "</label>"

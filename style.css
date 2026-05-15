@@ -252,6 +252,22 @@ button {
   font-weight: 700;
 }
 
+.tile-field {
+  gap: 6px;
+  padding: 14px 16px 12px;
+  border: 1.5px solid rgba(214, 132, 82, 0.72);
+  border-radius: 18px;
+  background: linear-gradient(180deg, rgba(255, 250, 246, 0.98) 0%, rgba(255, 255, 255, 0.96) 100%);
+}
+
+.tile-field .field-label,
+.inline-field.tile-field span {
+  color: var(--primary-dark);
+  font-size: 0.86rem;
+  font-weight: 800;
+  line-height: 1.2;
+}
+
 .text-input,
 .number-input,
 .textarea-input {
@@ -266,9 +282,27 @@ button {
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.7);
 }
 
+.tile-field .text-input,
+.tile-field .number-input {
+  min-height: 40px;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  font-size: 1.05rem;
+  font-weight: 800;
+}
+
+.tile-field .text-input::placeholder,
+.tile-field .number-input::placeholder {
+  color: rgba(93, 108, 93, 0.66);
+  font-weight: 700;
+}
+
 .date-input {
   min-width: 0;
-  padding-right: 52px;
+  padding-right: 36px;
   appearance: none;
   -webkit-appearance: none;
 }
@@ -391,6 +425,16 @@ button {
   font-size: 0.82rem;
   font-weight: 700;
   color: var(--muted);
+}
+
+.compact-tile-field {
+  min-height: 112px;
+  padding: 12px 14px;
+}
+
+.compact-tile-field .number-input {
+  font-size: 1.55rem;
+  line-height: 1.1;
 }
 
 .set-badge {
@@ -994,6 +1038,23 @@ details.json-accordion summary::-webkit-details-marker {
 
   .set-fields {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .tile-field {
+    padding: 12px 14px 10px;
+  }
+
+  .tile-field .text-input,
+  .tile-field .number-input {
+    font-size: 1rem;
+  }
+
+  .compact-tile-field {
+    min-height: 102px;
+  }
+
+  .compact-tile-field .number-input {
+    font-size: 1.45rem;
   }
 
   .compact-action-button {
