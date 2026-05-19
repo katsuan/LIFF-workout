@@ -164,8 +164,6 @@
     elements.tabRanking = document.getElementById("tab-ranking");
     elements.tabRankingButton = document.getElementById("tab-button-ranking");
     elements.actionBar = document.getElementById("action-bar");
-    elements.addExerciseButton = document.getElementById("add-exercise-button");
-    elements.previewButton = document.getElementById("preview-button");
     elements.copyJsonButton = document.getElementById("copy-json-button");
     elements.shareButton = document.getElementById("share-button");
   }
@@ -908,16 +906,6 @@
       return;
     }
 
-    if (button === elements.addExerciseButton) {
-      addExercise();
-      return;
-    }
-
-    if (button === elements.previewButton) {
-      setActiveTab("preview");
-      return;
-    }
-
     if (button === elements.copyJsonButton) {
       void copyCurrentFlexJson();
       return;
@@ -1085,6 +1073,7 @@
     }
 
     renderStatus();
+    renderTabButtonLabels();
 
     elements.tabButtons.forEach(function (button) {
       const isActive = button.getAttribute("data-tab") === appState.activeTab;
@@ -1093,6 +1082,7 @@
 
     if (elements.tabRankingButton) {
       elements.tabRankingButton.hidden = !isRankingEnabled();
+      elements.tabRankingButton.style.display = isRankingEnabled() ? "" : "none";
     }
     if (elements.tabNav) {
       elements.tabNav.classList.toggle("has-ranking", isRankingEnabled());
@@ -1110,6 +1100,44 @@
       elements.tabRanking.hidden = true;
     }
     updateActionBar();
+  }
+
+  function renderTabButtonLabels() {
+    if (!elements.tabButtons || !elements.tabButtons.length) {
+      return;
+    }
+
+    const currentExercise = findExpandedExercise(appState.workout ? appState.workout.exercises : []);
+    const currentExerciseLabel = currentExercise
+      ? currentExercise.name || "種目選択中"
+      : "未選択";
+    const previewCount = countNamedExercises(appState.workout);
+
+    elements.tabButtons.forEach(function (button) {
+      const tab = button.getAttribute("data-tab");
+      if (tab === "input") {
+        button.innerHTML = renderTabButtonLabel("入力", "入力中：" + currentExerciseLabel);
+      } else if (tab === "preview") {
+        button.innerHTML = renderTabButtonLabel("プレビュー", String(previewCount) + "件");
+      } else if (tab === "history") {
+        button.innerHTML = renderTabButtonLabel("履歴", "");
+      } else if (tab === "ranking") {
+        button.innerHTML = renderTabButtonLabel("ランキング", "");
+      }
+    });
+  }
+
+  function renderTabButtonLabel(main, sub) {
+    return (
+      '<span class="tab-button-main">' +
+      escapeHtml(main) +
+      "</span>" +
+      '<span class="tab-button-sub' +
+      (sub ? "" : " is-empty") +
+      '">' +
+      escapeHtml(sub || "") +
+      "</span>"
+    );
   }
 
   function renderActiveTab() {
@@ -1217,10 +1245,11 @@
   }
 
   function updateActionBar() {
-    if (!elements.addExerciseButton) {
+    if (!elements.actionBar || !elements.shareButton || !elements.copyJsonButton) {
       return;
     }
 
+    elements.actionBar.classList.toggle("has-debug-actions", isDebugModeEnabled());
     elements.copyJsonButton.hidden = !isDebugModeEnabled();
     elements.copyJsonButton.textContent = appState.liff.shareAvailable
       ? "Flex JSONコピー"
@@ -1429,6 +1458,7 @@
       : exercise.name || "種目を選択";
     const isExpanded = !showExerciseFields || isExerciseExpanded(exercise.exerciseId);
     const summary = showExerciseFields ? renderExerciseSummary(exercise) : "";
+    const canRemoveExercise = appState.workout.exercises.length > 1;
 
     return [
       '<section class="exercise-card" data-exercise-card-id="' +
@@ -1455,25 +1485,13 @@
               }
             })
           : "") +
-        (showExerciseFields
-          ? renderActionButton({
-              label: "編集",
-              icon: "✏️",
-              variant: "ghost-button compact-action-button",
-              action: "change-exercise-choice",
-              title: "種目変更",
-              attrs: {
-                "data-exercise-id": exercise.exerciseId
-              }
-            })
-          : "") +
         renderActionButton({
           label: "削除",
           icon: "🗑",
           variant: "danger-button compact-action-button",
           action: "remove-exercise",
           title: "種目削除",
-          disabled: exerciseIndex === 0,
+          disabled: !canRemoveExercise,
           attrs: {
             "data-exercise-id": exercise.exerciseId
           }
@@ -1490,21 +1508,25 @@
   }
 
   function renderExerciseStack(exercises) {
-    return exercises
+    return (
+      exercises
       .map(function (exercise, exerciseIndex) {
-        return (
-          renderExerciseCard(exercise, exerciseIndex) +
-          renderInsertExerciseButton(exercise.exerciseId)
-        );
+        return renderExerciseCard(exercise, exerciseIndex);
       })
-      .join("");
+      .join("") +
+      renderExerciseTailAddButton()
+    );
   }
 
-  function renderInsertExerciseButton(afterExerciseId) {
+  function renderExerciseTailAddButton() {
     return [
-      '<div class="between-exercise-action">',
+      '<div class="between-exercise-action tail-add-action">',
       '  <button class="outline-button between-exercise-button" data-action="insert-exercise-after" data-after-exercise-id="' +
-        escapeHtml(afterExerciseId) +
+        escapeHtml(
+          appState.workout.exercises.length
+            ? appState.workout.exercises[appState.workout.exercises.length - 1].exerciseId
+            : ""
+        ) +
         '" type="button">+ 種目追加</button>',
       "</div>"
     ].join("");
@@ -1557,6 +1579,10 @@
 
   function renderSetRow(exerciseId, set, setIndex) {
     const hasValidSet = isValidSetInput(toNullableNumber(set.weight), toNullableNumber(set.reps));
+    const exercise = appState.workout.exercises.find(function (item) {
+      return item.exerciseId === exerciseId;
+    });
+    const canRemoveSet = exercise ? exercise.sets.length > 1 : false;
     return [
       '<div class="set-row">',
       '  <div class="set-row-main">',
@@ -1570,7 +1596,7 @@
         variant: "danger-button compact-action-button set-remove-button",
         action: "remove-set",
         title: "セット削除",
-        disabled: setIndex === 0,
+        disabled: !canRemoveSet,
         attrs: {
           "data-exercise-id": exerciseId,
           "data-set-id": set.setId
@@ -1674,7 +1700,7 @@
       '  <div class="input-utility-title">入力操作</div>',
       '  <div class="button-row utility-button-row">',
       renderActionButton({
-        label: "履歴",
+        label: "履歴から",
         variant: "outline-button utility-button",
         action: "open-history-input"
       }),
@@ -1719,6 +1745,12 @@
     return (exercises || []).find(function (exercise) {
       return exercise.exerciseId === appState.ui.expandedExerciseId;
     });
+  }
+
+  function countNamedExercises(workout) {
+    return ((workout && workout.exercises) || []).filter(function (exercise) {
+      return Boolean(String(exercise.name || "").trim());
+    }).length;
   }
 
   function renderHistoryStatsSection() {
