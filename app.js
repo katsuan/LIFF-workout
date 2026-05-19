@@ -685,6 +685,7 @@
       }),
       "    </div>",
       renderInputUtilityActions(),
+      renderCurrentExerciseIndicator(workout.exercises),
       "  </section>",
       renderExerciseStack(workout.exercises),
       "</div>"
@@ -1472,6 +1473,7 @@
           variant: "danger-button compact-action-button",
           action: "remove-exercise",
           title: "種目削除",
+          disabled: exerciseIndex === 0,
           attrs: {
             "data-exercise-id": exercise.exerciseId
           }
@@ -1535,9 +1537,9 @@
         .join(""),
       "    </div>",
       '    <div class="button-row exercise-inline-actions">',
-      '      <button class="mini-button" data-action="add-set" data-exercise-id="' +
+      '      <button class="outline-button add-set-button" data-action="add-set" data-exercise-id="' +
       escapeHtml(exercise.exerciseId) +
-      '" type="button">セット追加</button>',
+      '" type="button">+ セット追加</button>',
       renderActionButton({
         label: getExerciseMemoButtonLabel(exercise),
         variant: "ghost-button memo-toggle-button",
@@ -1568,6 +1570,7 @@
         variant: "danger-button compact-action-button set-remove-button",
         action: "remove-set",
         title: "セット削除",
+        disabled: setIndex === 0,
         attrs: {
           "data-exercise-id": exerciseId,
           "data-set-id": set.setId
@@ -1688,6 +1691,34 @@
       "  </div>",
       "</div>"
     ].join("");
+  }
+
+  function renderCurrentExerciseIndicator(exercises) {
+    const currentExercise = findExpandedExercise(exercises);
+    if (!currentExercise) {
+      return "";
+    }
+
+    const currentIndex = (exercises || []).findIndex(function (exercise) {
+      return exercise.exerciseId === currentExercise.exerciseId;
+    });
+
+    return [
+      '<div class="current-exercise-indicator">',
+      '  <span class="current-exercise-label">入力中</span>',
+      '  <strong class="current-exercise-name">エクササイズ ' +
+        escapeHtml(String(currentIndex + 1)) +
+        " ・ " +
+        escapeHtml(currentExercise.name || "種目を選択") +
+        "</strong>",
+      "</div>"
+    ].join("");
+  }
+
+  function findExpandedExercise(exercises) {
+    return (exercises || []).find(function (exercise) {
+      return exercise.exerciseId === appState.ui.expandedExerciseId;
+    });
   }
 
   function renderHistoryStatsSection() {
@@ -2162,10 +2193,12 @@
         return " " + key + '="' + escapeHtml(String(attrs[key])) + '"';
       })
       .join("");
+    const isDisabled = Boolean(options.disabled);
 
     return (
       '<button class="' +
       escapeHtml(options.variant || "outline-button") +
+      (isDisabled ? " is-disabled" : "") +
       '" aria-label="' +
       escapeHtml(options.title || options.label) +
       '" title="' +
@@ -2174,6 +2207,7 @@
       escapeHtml(options.action || "") +
       '"' +
       attributeText +
+      (isDisabled ? " disabled" : "") +
       ' type="button">' +
       '<span class="action-label">' +
       escapeHtml(options.label || "") +

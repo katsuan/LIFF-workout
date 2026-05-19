@@ -400,6 +400,27 @@ button {
   font-size: 0.86rem;
 }
 
+.current-exercise-indicator {
+  display: grid;
+  gap: 2px;
+  padding: 8px 10px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.72);
+  border: 1px solid rgba(201, 106, 45, 0.16);
+}
+
+.current-exercise-label {
+  color: var(--muted);
+  font-size: 0.74rem;
+  font-weight: 600;
+}
+
+.current-exercise-name {
+  color: var(--text);
+  font-size: 0.88rem;
+  font-weight: 650;
+}
+
 .exercise-meta,
 .history-meta,
 .ranking-meta,
@@ -430,9 +451,9 @@ button {
 
 .set-row-main {
   display: grid;
-  grid-template-columns: 64px minmax(0, 1fr) minmax(0, 1fr) auto;
+  grid-template-columns: 64px minmax(0, 1fr) minmax(0, 1fr) 78px;
   gap: 8px;
-  align-items: stretch;
+  align-items: end;
 }
 
 .set-side {
@@ -442,12 +463,35 @@ button {
 }
 
 .set-head-meta {
-  display: grid;
-  align-content: center;
-  justify-items: end;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: flex-start;
+  align-self: center;
   gap: 2px;
-  min-width: 92px;
-  padding: 4px 0;
+  min-width: 78px;
+  padding: 8px 0 0;
+}
+
+.set-head-meta .metric-label {
+  position: absolute;
+  top: -1px;
+  left: 0;
+  display: inline-flex;
+  align-items: center;
+  padding: 0 4px;
+  background: #fcfefc;
+  color: var(--primary-dark);
+  font-size: 0.73rem;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.set-head-meta .metric-value {
+  font-size: 0.98rem;
+  font-weight: 650;
+  line-height: 1;
 }
 
 .inline-field {
@@ -667,8 +711,16 @@ button {
 }
 
 .exercise-inline-actions .mini-button,
+.exercise-inline-actions .add-set-button,
 .exercise-inline-actions .memo-toggle-button {
   flex: 1 1 0;
+}
+
+.add-set-button {
+  border-style: dashed;
+  border-color: rgba(201, 106, 45, 0.24);
+  color: var(--primary-dark);
+  background: rgba(255, 255, 255, 0.72);
 }
 
 .input-utility-title {
@@ -731,6 +783,17 @@ button {
 .danger-button {
   background: rgba(214, 69, 69, 0.1);
   color: var(--danger);
+}
+
+button.is-disabled,
+button:disabled {
+  cursor: default;
+  pointer-events: none;
+  opacity: 0.48;
+  background: rgba(93, 108, 93, 0.08);
+  border-color: rgba(93, 108, 93, 0.14);
+  color: rgba(93, 108, 93, 0.72);
+  box-shadow: none;
 }
 
 .link-button {
@@ -1170,7 +1233,7 @@ details.json-accordion summary::-webkit-details-marker {
   }
 
   .set-row-main {
-    grid-template-columns: 56px minmax(0, 1fr) minmax(0, 1fr) 76px;
+    grid-template-columns: 56px minmax(0, 1fr) minmax(0, 1fr) 70px;
     gap: 6px;
   }
 
