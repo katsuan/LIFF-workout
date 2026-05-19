@@ -1183,7 +1183,27 @@ button:disabled {
   align-items: flex-start;
   justify-content: space-between;
   gap: 12px;
-  margin-bottom: 12px;
+}
+
+.history-card-accordion {
+  padding: 0;
+  overflow: hidden;
+}
+
+.history-card-summary {
+  list-style: none;
+  cursor: pointer;
+  padding: 14px 16px;
+}
+
+.history-card-summary::-webkit-details-marker {
+  display: none;
+}
+
+.history-card-body {
+  display: grid;
+  gap: 12px;
+  padding: 0 16px 16px;
 }
 
 .history-card-copy {
@@ -1192,7 +1212,7 @@ button:disabled {
 }
 
 .history-meta-inline {
-  margin: 0 0 6px;
+  margin: 0 0 4px;
 }
 
 .history-card header,
@@ -1220,10 +1240,31 @@ button:disabled {
   flex: 0 0 auto;
 }
 
+.history-actions-end .pill-button,
+.history-actions-end .danger-button {
+  min-width: 72px;
+}
+
 .history-actions-inline {
   flex: 0 0 auto;
   align-items: center;
   flex-wrap: nowrap;
+}
+
+.history-disclosure {
+  color: var(--muted);
+  font-size: 0.82rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.history-card-accordion[open] .history-disclosure {
+  font-size: 0;
+}
+
+.history-card-accordion[open] .history-disclosure::before {
+  content: "閉じる";
+  font-size: 0.82rem;
 }
 
 .workout-stats-section {

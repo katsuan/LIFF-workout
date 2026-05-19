@@ -913,7 +913,6 @@
 
     const html = [
       '<div class="history-stack">',
-      renderHistoryStatsSection(),
       appState.history
         .map(function (workout) {
           return renderHistoryCard(workout);
@@ -2034,34 +2033,34 @@
 
   function renderHistoryCard(workout) {
     return [
-      '<article class="history-card">',
-      '  <div class="history-card-head">',
+      '<details class="history-card history-card-accordion">',
+      '  <summary class="history-card-head history-card-summary">',
       '    <div class="history-card-copy">',
       '      <p class="history-meta history-meta-inline">' +
         escapeHtml(workout.date || "-") +
         " ・ " +
         escapeHtml(String((workout.exercises || []).length)) +
-        "種目 ・ " +
-        escapeHtml(String(countValidSets(workout))) +
-        "セット ・ MAX RM " +
-        escapeHtml(formatMetric(findWorkoutMax1rm(workout), "kg", 1)) +
-        "</p>",
+        "種目</p>",
       "      <h4>" + escapeHtml(resolveWorkoutTitle(workout.title, workout.user)) + "</h4>",
       "    </div>",
-      '    <div class="history-actions history-actions-inline">',
+      '    <span class="history-disclosure">開く</span>',
+      "  </summary>",
+      '  <div class="history-card-body">',
+      renderWorkoutExerciseStats(workout),
+      '    <div class="history-actions history-actions-end">',
       renderActionButton({
-        label: "再入力",
+        label: "入力適用",
         icon: "↺",
-        variant: "pill-button compact-action-button",
+        variant: "pill-button",
         action: "restore-history",
         attrs: {
           "data-workout-id": workout.workoutId
         }
       }),
       renderActionButton({
-        label: "履歴削除",
+        label: "削除",
         icon: "🗑",
-        variant: "danger-button compact-action-button",
+        variant: "danger-button",
         action: "delete-history",
         attrs: {
           "data-workout-id": workout.workoutId
@@ -2069,8 +2068,7 @@
       }),
       "    </div>",
       "  </div>",
-      renderWorkoutExerciseStats(workout),
-      "</article>"
+      "</details>"
     ].join("");
   }
 
@@ -2736,6 +2734,10 @@
   }
 
   function deleteHistory(workoutId) {
+    const shouldDelete = window.confirm("この履歴を削除しますか？");
+    if (!shouldDelete) {
+      return;
+    }
     appState.history = LocalStorageWorkoutRepository.deleteById(workoutId);
     renderHistory();
     renderShell();
