@@ -1908,14 +1908,14 @@
       '  <div class="input-utility-title">入力操作</div>',
       '  <div class="button-row utility-button-row">',
       renderActionButton({
-        label: "履歴から",
+        label: "サンプル",
         variant: "outline-button utility-button",
-        action: "open-history-input"
+        action: "sample-workout"
       }),
       renderActionButton({
-        label: "サンプル",
+        label: "履歴から",
         variant: "pill-button utility-button",
-        action: "sample-workout"
+        action: "open-history-input"
       }),
       renderActionButton({
         label: "初期化",
