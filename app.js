@@ -19,7 +19,8 @@
 
   const MAX_HISTORY_ITEMS = 10;
   const MAX_SETS_PER_FLEX_EXERCISE = 8;
-  const MAX_EXERCISES_PER_BUBBLE = 6;
+  const MAX_EXERCISES_PER_BUBBLE = 4;
+  const MAX_FLEX_UNITS_PER_BUBBLE = 16;
   const FLEX_THEME = {
     header: "#C96A2D",
     footer: "#C96A2D",
@@ -88,6 +89,8 @@
     }
   };
 
+  let statusTimerId = 0;
+
   const elements = {};
 
   document.addEventListener("DOMContentLoaded", initApp);
@@ -142,8 +145,6 @@
           : "この環境では共有機能を使えないため、プレビュー中心で起動しました。",
         "warn"
       );
-    } else {
-      setStatus("共有機能が利用できます。", "info");
     }
 
     syncWorkoutUser();
@@ -441,7 +442,7 @@
 
   function buildWorkoutFlexMessage(workout) {
     const calculatedWorkout = sanitizeWorkout(workout);
-    const exerciseChunks = chunkArray(calculatedWorkout.exercises, MAX_EXERCISES_PER_BUBBLE);
+    const exerciseChunks = splitExercisesForFlexBubbles(calculatedWorkout.exercises);
 
     const bubbles = exerciseChunks.map(function (chunk, index) {
       return buildWorkoutBubble(calculatedWorkout, chunk, index, exerciseChunks.length);
@@ -449,7 +450,7 @@
 
     return {
       type: "flex",
-      altText: (calculatedWorkout.date || getTodayLocalDate()) + " WorkOut",
+      altText: buildWorkoutAltText(calculatedWorkout),
       contents:
         bubbles.length === 1
           ? bubbles[0]
@@ -1091,15 +1092,30 @@
   }
 
   function setStatus(message, type) {
+    clearStatusTimer();
     appState.status.message = message;
     appState.status.type = type || "info";
     renderStatus();
+
+    if (appState.status.type === "info") {
+      statusTimerId = window.setTimeout(function () {
+        clearStatus();
+      }, 1800);
+    }
   }
 
   function clearStatus() {
+    clearStatusTimer();
     appState.status.message = "";
     appState.status.type = "info";
     renderStatus();
+  }
+
+  function clearStatusTimer() {
+    if (statusTimerId) {
+      window.clearTimeout(statusTimerId);
+      statusTimerId = 0;
+    }
   }
 
   function setActiveTab(tab) {
@@ -1541,23 +1557,20 @@
   function renderInputUtilityActions() {
     return [
       '<div class="input-utility-card">',
-      '  <div class="input-utility-title">操作</div>',
+      '  <div class="input-utility-title">入力操作</div>',
       '  <div class="button-row utility-button-row">',
       renderActionButton({
-        label: "履歴入力",
-        icon: "↺",
+        label: "履歴",
         variant: "outline-button utility-button",
         action: "open-history-input"
       }),
       renderActionButton({
-        label: "サンプル入力",
-        icon: "◎",
+        label: "サンプル",
         variant: "pill-button utility-button",
         action: "sample-workout"
       }),
       renderActionButton({
-        label: "入力リセット",
-        icon: "×",
+        label: "初期化",
         variant: "danger-button utility-button",
         action: "reset-workout"
       }),
@@ -1656,7 +1669,7 @@
             text: workout.date || "-",
             color: "#ffffff",
             weight: "bold",
-            size: "md",
+            size: "sm",
             wrap: true,
             flex: 3,
             margin: "none"
@@ -1668,7 +1681,7 @@
                 type: "text",
                 text: workout.user.displayName,
                 color: "#FDF3EA",
-                size: "sm",
+                size: "xs",
                 align: "end",
                 wrap: true,
                 flex: 2
@@ -1682,9 +1695,9 @@
         text: resolveWorkoutTitle(workout.title),
         color: "#ffffff",
         weight: "bold",
-        size: "xl",
+        size: "lg",
         wrap: true,
-        margin: "sm"
+        margin: "xs"
       }
     ];
 
@@ -1703,14 +1716,14 @@
         type: "box",
         layout: "vertical",
         backgroundColor: FLEX_THEME.header,
-        paddingAll: "12px",
+        paddingAll: "10px",
         contents: headerContents
       },
       body: {
         type: "box",
         layout: "vertical",
-        paddingAll: "8px",
-        spacing: "sm",
+        paddingAll: "6px",
+        spacing: "xs",
         contents: exercises.map(function (exercise) {
           return buildExerciseBoxForFlex(exercise);
         })
@@ -1718,7 +1731,7 @@
       footer: {
         type: "box",
         layout: "vertical",
-        paddingAll: "6px",
+        paddingAll: "5px",
         contents: [
           {
             type: "text",
@@ -1737,12 +1750,12 @@
     return {
       type: "box",
       layout: "vertical",
-      spacing: "sm",
-      margin: "sm",
-      paddingAll: "10px",
-      borderWidth: "2px",
+      spacing: "xs",
+      margin: "xs",
+      paddingAll: "8px",
+      borderWidth: "1px",
       borderColor: FLEX_THEME.border,
-      cornerRadius: "12px",
+      cornerRadius: "10px",
       contents: [
         {
           type: "box",
@@ -1752,14 +1765,14 @@
               type: "text",
               text: exercise.name,
               weight: "bold",
-              size: "md",
+              size: "sm",
               wrap: true,
               flex: 4
             },
             {
               type: "text",
               text: "RM : " + formatMetric(exercise.maxEstimated1rm, "kg", 0),
-              size: "md",
+              size: "sm",
               align: "end",
               flex: 3
             }
@@ -1771,11 +1784,11 @@
               {
                 type: "text",
                 text: truncateText(exercise.memo, 42),
-              size: "xs",
-              color: FLEX_THEME.textMuted,
-              wrap: true
-            }
-          ]
+                size: "xxs",
+                color: FLEX_THEME.textMuted,
+                wrap: true
+              }
+            ]
           : []
       )
     };
@@ -1789,19 +1802,19 @@
       return {
         type: "box",
         layout: "horizontal",
-        spacing: "sm",
+        spacing: "xs",
         alignItems: "center",
         contents: [
           {
             type: "text",
             text: String(index + 1),
-            size: "sm",
+            size: "xs",
             flex: 0
           },
           {
             type: "text",
             text: formatFlexWeight(set.weight) + "  ×  " + formatMetric(set.reps, "reps", 0),
-            size: "sm",
+            size: "xs",
             wrap: true,
             flex: 6
           }
@@ -1812,16 +1825,16 @@
                 type: "box",
                 layout: "vertical",
                 flex: 0,
-                paddingAll: "3px",
-                paddingStart: "6px",
-                paddingEnd: "6px",
-                  backgroundColor: FLEX_THEME.accent,
+                paddingAll: "2px",
+                paddingStart: "5px",
+                paddingEnd: "5px",
+                backgroundColor: FLEX_THEME.accent,
                 cornerRadius: "2px",
                 contents: [
                   {
                     type: "text",
                     text: "MAX RM",
-                    size: "xs",
+                    size: "xxs",
                     color: "#FFFFFF",
                     align: "center",
                     wrap: false
@@ -1844,6 +1857,53 @@
     }
 
     return lines;
+  }
+
+  function splitExercisesForFlexBubbles(exercises) {
+    const chunks = [];
+    let currentChunk = [];
+    let currentUnits = 0;
+
+    exercises.forEach(function (exercise) {
+      const exerciseUnits = estimateExerciseFlexUnits(exercise);
+      const shouldSplit =
+        currentChunk.length > 0 &&
+        (currentChunk.length >= MAX_EXERCISES_PER_BUBBLE ||
+          currentUnits + exerciseUnits > MAX_FLEX_UNITS_PER_BUBBLE);
+
+      if (shouldSplit) {
+        chunks.push(currentChunk);
+        currentChunk = [];
+        currentUnits = 0;
+      }
+
+      currentChunk.push(exercise);
+      currentUnits += exerciseUnits;
+    });
+
+    if (currentChunk.length > 0) {
+      chunks.push(currentChunk);
+    }
+
+    return chunks;
+  }
+
+  function estimateExerciseFlexUnits(exercise) {
+    const visibleSetCount = Math.min((exercise.sets || []).length, MAX_SETS_PER_FLEX_EXERCISE);
+    const hiddenSetCount = (exercise.sets || []).length > MAX_SETS_PER_FLEX_EXERCISE ? 1 : 0;
+    const memoUnits = exercise.memo ? Math.min(2, Math.ceil(String(exercise.memo).length / 24)) : 0;
+    return 2 + visibleSetCount + hiddenSetCount + memoUnits;
+  }
+
+  function buildWorkoutAltText(workout) {
+    const title = resolveWorkoutTitle(workout.title);
+    const displayName = workout && workout.user ? String(workout.user.displayName || "").trim() : "";
+
+    if (displayName && displayName.toLowerCase() !== "anonymous") {
+      return displayName + "'s " + title;
+    }
+
+    return (workout.date || getTodayLocalDate()) + " " + title;
   }
 
   function shouldShowWorkoutUser(workout) {
@@ -2288,14 +2348,6 @@
 
   function deepClone(value) {
     return JSON.parse(JSON.stringify(value));
-  }
-
-  function chunkArray(items, size) {
-    const chunks = [];
-    for (let index = 0; index < items.length; index += size) {
-      chunks.push(items.slice(index, index + size));
-    }
-    return chunks.length ? chunks : [[]];
   }
 
   function truncateText(text, maxLength) {
