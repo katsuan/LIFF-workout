@@ -14,13 +14,17 @@
   );
 
   const STORAGE_KEYS = {
-    history: "liff-workout-history"
+    history: "liff-workout-history",
+    theme: "liff-workout-theme"
   };
 
   const MAX_HISTORY_ITEMS = 10;
   const MAX_SETS_PER_FLEX_EXERCISE = 8;
   const MAX_EXERCISES_PER_BUBBLE = 4;
   const MAX_FLEX_UNITS_PER_BUBBLE = 16;
+  const DEFAULT_THEME = {
+    baseColor: "#C96A2D"
+  };
   const FLEX_THEME = {
     header: "#C96A2D",
     footer: "#C96A2D",
@@ -60,7 +64,7 @@
     { id: "plank", name: "プランク", muscle: "体幹" },
     { id: "hanging-leg-raise", name: "ハンギングレッグレイズ", muscle: "体幹" }
   ];
-  const MUSCLE_FILTERS = ["all", "胸", "背中", "脚", "肩", "腕", "体幹"];
+  const MUSCLE_FILTERS = ["all", "胸", "背中", "脚", "肩", "腕", "体幹", "その他"];
 
   const appState = {
     activeTab: "input",
@@ -78,8 +82,10 @@
       catalogQuery: "",
       suppressScrollSpyUntil: 0,
       expandedExerciseId: null,
-      memoOpenExerciseIds: {}
+      memoOpenExerciseIds: {},
+      settingsModalOpen: false
     },
+    theme: Object.assign({}, DEFAULT_THEME),
     liff: {
       initialized: false,
       ready: false,
@@ -125,6 +131,8 @@
     cacheElements();
     bindEvents();
 
+    appState.theme = loadThemePreference();
+    applyTheme(appState.theme.baseColor);
     appState.workout = createEmptyWorkout();
     appState.history = loadWorkoutHistory();
     if (isRankingEnabled()) {
@@ -222,6 +230,152 @@
     }
 
     return Object.assign({}, DEFAULT_USER);
+  }
+
+  function loadThemePreference() {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEYS.theme);
+      if (!raw) {
+        return Object.assign({}, DEFAULT_THEME);
+      }
+      const parsed = JSON.parse(raw);
+      const baseColor = normalizeHexColor(parsed && parsed.baseColor);
+      return {
+        baseColor: baseColor || DEFAULT_THEME.baseColor
+      };
+    } catch (error) {
+      console.warn("Failed to load theme preference:", error);
+      return Object.assign({}, DEFAULT_THEME);
+    }
+  }
+
+  function saveThemePreference() {
+    localStorage.setItem(STORAGE_KEYS.theme, JSON.stringify(appState.theme));
+  }
+
+  function updateTheme(baseColor) {
+    const normalizedColor = normalizeHexColor(baseColor);
+    if (!normalizedColor) {
+      return;
+    }
+    appState.theme.baseColor = normalizedColor;
+    applyTheme(normalizedColor);
+    saveThemePreference();
+  }
+
+  function resetTheme() {
+    appState.theme = Object.assign({}, DEFAULT_THEME);
+    applyTheme(appState.theme.baseColor);
+    saveThemePreference();
+  }
+
+  function applyTheme(baseColor) {
+    const normalizedColor = normalizeHexColor(baseColor) || DEFAULT_THEME.baseColor;
+    const root = document.documentElement;
+    const theme = buildThemePalette(normalizedColor);
+    root.style.setProperty("--primary", theme.primary);
+    root.style.setProperty("--primary-dark", theme.primaryDark);
+    root.style.setProperty("--primary-soft", theme.primarySoft);
+    root.style.setProperty("--primary-tint", theme.primaryTint);
+    root.style.setProperty("--bg-accent", theme.bgAccent);
+  }
+
+  function buildThemePalette(baseColor) {
+    return {
+      primary: baseColor,
+      primaryDark: adjustColorLightness(baseColor, -0.24),
+      primarySoft: mixColors(baseColor, "#FFFFFF", 0.76),
+      primaryTint: mixColors(baseColor, "#FFF8F1", 0.9),
+      bgAccent: mixColors(baseColor, "#F4EBDD", 0.88)
+    };
+  }
+
+  function getFlexTheme() {
+    const baseColor = appState.theme && appState.theme.baseColor
+      ? appState.theme.baseColor
+      : DEFAULT_THEME.baseColor;
+    return {
+      header: baseColor,
+      footer: baseColor,
+      border: adjustColorLightness(baseColor, 0.08),
+      accent: FLEX_THEME.accent,
+      accentSoft: mixColors(baseColor, "#FFFFFF", 0.76),
+      textMuted: mixColors(baseColor, "#43362E", 0.42)
+    };
+  }
+
+  function normalizeHexColor(value) {
+    const source = String(value || "").trim();
+    if (!source) {
+      return "";
+    }
+    const hex = source.startsWith("#") ? source : "#" + source;
+    if (/^#[0-9a-fA-F]{6}$/.test(hex)) {
+      return hex.toUpperCase();
+    }
+    if (/^#[0-9a-fA-F]{3}$/.test(hex)) {
+      return (
+        "#" +
+        hex
+          .slice(1)
+          .split("")
+          .map(function (char) {
+            return char + char;
+          })
+          .join("")
+      ).toUpperCase();
+    }
+    return "";
+  }
+
+  function hexToRgb(hex) {
+    const normalized = normalizeHexColor(hex);
+    if (!normalized) {
+      return null;
+    }
+    return {
+      r: parseInt(normalized.slice(1, 3), 16),
+      g: parseInt(normalized.slice(3, 5), 16),
+      b: parseInt(normalized.slice(5, 7), 16)
+    };
+  }
+
+  function rgbToHex(rgb) {
+    return (
+      "#" +
+      [rgb.r, rgb.g, rgb.b]
+        .map(function (value) {
+          const clamped = Math.max(0, Math.min(255, Math.round(value)));
+          return clamped.toString(16).padStart(2, "0");
+        })
+        .join("")
+    ).toUpperCase();
+  }
+
+  function mixColors(colorA, colorB, amount) {
+    const rgbA = hexToRgb(colorA);
+    const rgbB = hexToRgb(colorB);
+    if (!rgbA || !rgbB) {
+      return normalizeHexColor(colorA) || DEFAULT_THEME.baseColor;
+    }
+    const ratio = Math.max(0, Math.min(1, Number(amount)));
+    return rgbToHex({
+      r: rgbA.r + (rgbB.r - rgbA.r) * ratio,
+      g: rgbA.g + (rgbB.g - rgbA.g) * ratio,
+      b: rgbA.b + (rgbB.b - rgbA.b) * ratio
+    });
+  }
+
+  function adjustColorLightness(color, delta) {
+    const rgb = hexToRgb(color);
+    if (!rgb) {
+      return DEFAULT_THEME.baseColor;
+    }
+    return rgbToHex({
+      r: rgb.r + 255 * delta,
+      g: rgb.g + 255 * delta,
+      b: rgb.b + 255 * delta
+    });
   }
 
   function createEmptyWorkout() {
@@ -646,7 +800,7 @@
     return hydrateWorkout(
       Object.assign({}, workout, {
         workoutId: generateId("workout"),
-        title: resolveWorkoutTitle(workout.title),
+        title: resolveWorkoutTitle(workout.title, workout.user),
         createdAt: now,
         updatedAt: now
       })
@@ -662,7 +816,10 @@
       '<div class="input-stack">',
       '  <section class="panel-card input-card">',
       '    <div class="panel-head">',
-      '      <h2 class="panel-title">記録入力</h2>',
+      '      <div class="input-head-row">',
+      renderSettingsTrigger(),
+      '        <h2 class="panel-title">記録入力</h2>',
+      "      </div>",
       "    </div>",
       '    <div class="form-grid two-col">',
       fieldTemplate({
@@ -683,8 +840,8 @@
       }),
       "    </div>",
       renderInputUtilityActions(),
-      renderCurrentExerciseIndicator(workout.exercises),
       "  </section>",
+      renderSettingsModal(),
       renderExerciseStack(workout.exercises),
       "</div>"
     ].join("");
@@ -989,6 +1146,19 @@
       case "toggle-exercise-memo":
         toggleExerciseMemo(button.getAttribute("data-exercise-id"));
         break;
+      case "open-settings-modal":
+        appState.ui.settingsModalOpen = true;
+        renderInput();
+        break;
+      case "close-settings-modal":
+        appState.ui.settingsModalOpen = false;
+        renderInput();
+        break;
+      case "reset-theme":
+        resetTheme();
+        renderInput();
+        renderPreview();
+        break;
       default:
         break;
     }
@@ -1006,6 +1176,20 @@
       touchWorkout();
       renderPreview();
       renderShell();
+      return;
+    }
+
+    if (target.hasAttribute("data-theme-field")) {
+      const field = target.getAttribute("data-theme-field");
+      if (field === "baseColor") {
+        const nextColor = normalizeHexColor(target.value);
+        if (!nextColor) {
+          return;
+        }
+        updateTheme(nextColor);
+        renderInput();
+        renderPreview();
+      }
       return;
     }
 
@@ -1120,7 +1304,7 @@
       } else if (tab === "preview") {
         button.innerHTML = renderTabButtonLabel("プレビュー", String(previewCount) + "件");
       } else if (tab === "history") {
-        button.innerHTML = renderTabButtonLabel("履歴", "");
+        button.innerHTML = renderTabButtonLabel("履歴", String(appState.history.length) + "件");
       } else if (tab === "ranking") {
         button.innerHTML = renderTabButtonLabel("ランキング", "");
       }
@@ -1333,6 +1517,9 @@
 
   function syncWorkoutUser() {
     appState.workout.user = Object.assign({}, DEFAULT_USER, appState.liff.profile || {});
+    if (!String(appState.workout.title || "").trim()) {
+      appState.workout.title = getDefaultWorkoutTitle(appState.workout.user);
+    }
     appState.workout.groupKey = resolveGroupKey();
     touchWorkout(false);
   }
@@ -1446,9 +1633,17 @@
     });
   }
 
-  function resolveWorkoutTitle(title) {
+  function getDefaultWorkoutTitle(user) {
+    const displayName = user ? String(user.displayName || "").trim() : "";
+    if (displayName && displayName.toLowerCase() !== "anonymous") {
+      return displayName + "'s WorkOut";
+    }
+    return "WorkOut";
+  }
+
+  function resolveWorkoutTitle(title, user) {
     const normalizedTitle = String(title || "").trim();
-    return normalizedTitle || "WorkOut";
+    return normalizedTitle || getDefaultWorkoutTitle(user);
   }
 
   function renderExerciseCard(exercise, exerciseIndex) {
@@ -1604,8 +1799,8 @@
       }),
       "    </div>",
       '    <label class="inline-field tile-field compact-tile-field">',
-      "      <span>重量 kg</span>",
-      '      <input class="number-input" aria-label="重量 kg" data-set-field="weight" data-exercise-id="' +
+      "      <span>kg</span>",
+      '      <input class="number-input" aria-label="kg" data-set-field="weight" data-exercise-id="' +
       escapeHtml(exerciseId) +
       '" data-set-id="' +
       escapeHtml(set.setId) +
@@ -1614,8 +1809,8 @@
       '" />',
       "    </label>",
       '    <label class="inline-field tile-field compact-tile-field">',
-      "      <span>回数 reps</span>",
-      '      <input class="number-input" aria-label="回数 reps" data-set-field="reps" data-exercise-id="' +
+      "      <span>reps</span>",
+      '      <input class="number-input" aria-label="reps" data-set-field="reps" data-exercise-id="' +
       escapeHtml(exerciseId) +
       '" data-set-id="' +
       escapeHtml(set.setId) +
@@ -1677,13 +1872,10 @@
     return [
       '<section class="panel-card">',
       '  <div class="panel-head">',
-      "    <div>",
-      '      <p class="section-label">Stats</p>',
-      '      <h2 class="panel-title">STATS</h2>',
-      "    </div>",
+      '    <h2 class="panel-title">STATS</h2>',
       '    <span class="badge">' + escapeHtml(String(previewExercises.length)) + "種目</span>",
       "  </div>",
-      '  <div class="preview-grid">',
+      '  <div class="stats-list">',
       previewExercises
         .map(function (exercise) {
           return renderExerciseStatCard(exercise);
@@ -1717,6 +1909,64 @@
       "  </div>",
       "</div>"
     ].join("");
+  }
+
+  function renderSettingsTrigger() {
+    const profile = appState.liff.profile || DEFAULT_USER;
+    const avatar = profile.pictureUrl
+      ? '<img class="user-avatar-image" src="' + escapeHtml(profile.pictureUrl) + '" alt="" />'
+      : '<span class="user-avatar-fallback">' + escapeHtml(getUserInitial(profile.displayName)) + "</span>";
+    return [
+      '<button class="user-avatar-button" data-action="open-settings-modal" type="button" aria-label="表示設定を開く" title="表示設定">',
+      '  <span class="user-avatar">' + avatar + '<span class="user-avatar-edit" aria-hidden="true">⚙</span></span>',
+      "</button>"
+    ].join("");
+  }
+
+  function renderSettingsModal() {
+    if (!appState.ui.settingsModalOpen) {
+      return "";
+    }
+    return [
+      '<div class="settings-modal-backdrop">',
+      '  <button class="settings-modal-scrim" data-action="close-settings-modal" type="button" aria-label="閉じる"></button>',
+      '  <section class="settings-modal" role="dialog" aria-modal="true" aria-label="表示設定">',
+      '    <div class="settings-modal-head">',
+      '      <div>',
+      '        <p class="section-label">Appearance</p>',
+      '        <h3 class="panel-title">ベースカラー設定</h3>',
+      "      </div>",
+      '      <button class="ghost-button modal-close-button" data-action="close-settings-modal" type="button">閉じる</button>',
+      "    </div>",
+      '    <p class="settings-modal-copy">アプリと送信プレビューの基調色を変更できます。</p>',
+      '    <div class="settings-color-row">',
+      '      <label class="tile-field settings-color-field">',
+      '        <span class="field-label">ベースカラー</span>',
+      '        <input class="color-input" data-theme-field="baseColor" type="color" value="' +
+        escapeHtml(appState.theme.baseColor || DEFAULT_THEME.baseColor) +
+        '" />',
+      "      </label>",
+      '      <label class="tile-field settings-hex-field">',
+      '        <span class="field-label">HEX</span>',
+      '        <input class="text-input" data-theme-field="baseColor" type="text" inputmode="text" value="' +
+        escapeHtml(appState.theme.baseColor || DEFAULT_THEME.baseColor) +
+        '" placeholder="#C96A2D" />',
+      "      </label>",
+      "    </div>",
+      '    <div class="settings-modal-actions">',
+      '      <button class="danger-button" data-action="reset-theme" type="button">初期色に戻す</button>',
+      "    </div>",
+      "  </section>",
+      "</div>"
+    ].join("");
+  }
+
+  function getUserInitial(displayName) {
+    const normalized = String(displayName || "").trim();
+    if (!normalized) {
+      return "W";
+    }
+    return normalized.slice(0, 1).toUpperCase();
   }
 
   function renderCurrentExerciseIndicator(exercises) {
@@ -1782,7 +2032,7 @@
         "セット ・ MAX RM " +
         escapeHtml(formatMetric(findWorkoutMax1rm(workout), "kg", 1)) +
         "</p>",
-      "      <h4>" + escapeHtml(resolveWorkoutTitle(workout.title)) + "</h4>",
+      "      <h4>" + escapeHtml(resolveWorkoutTitle(workout.title, workout.user)) + "</h4>",
       "    </div>",
       '    <div class="history-actions history-actions-inline">',
       renderActionButton({
@@ -1833,6 +2083,7 @@
   }
 
   function buildWorkoutBubble(workout, exercises, bubbleIndex, bubbleCount) {
+    const theme = getFlexTheme();
     const headerContents = [
       {
         type: "box",
@@ -1866,7 +2117,7 @@
       },
       {
         type: "text",
-        text: resolveWorkoutTitle(workout.title),
+        text: resolveWorkoutTitle(workout.title, workout.user),
         color: "#ffffff",
         weight: "bold",
         size: "lg",
@@ -1883,13 +2134,13 @@
           backgroundColor: "#FFFFFF"
         },
         footer: {
-          backgroundColor: FLEX_THEME.footer
+          backgroundColor: theme.footer
         }
       },
       header: {
         type: "box",
         layout: "vertical",
-        backgroundColor: FLEX_THEME.header,
+        backgroundColor: theme.header,
         paddingAll: "10px",
         contents: headerContents
       },
@@ -1921,6 +2172,7 @@
   }
 
   function buildExerciseBoxForFlex(exercise) {
+    const theme = getFlexTheme();
     return {
       type: "box",
       layout: "vertical",
@@ -1928,7 +2180,7 @@
       margin: "xs",
       paddingAll: "8px",
       borderWidth: "1px",
-      borderColor: FLEX_THEME.border,
+      borderColor: theme.border,
       cornerRadius: "10px",
       contents: [
         {
@@ -1959,7 +2211,7 @@
                 type: "text",
                 text: truncateText(exercise.memo, 42),
                 size: "xxs",
-                color: FLEX_THEME.textMuted,
+                color: theme.textMuted,
                 wrap: true
               }
             ]
@@ -1969,6 +2221,7 @@
   }
 
   function buildSetLinesForFlex(exercise) {
+    const theme = getFlexTheme();
     const visibleSets = exercise.sets.slice(0, MAX_SETS_PER_FLEX_EXERCISE);
     const lines = visibleSets.map(function (set, index) {
       const isMaxRmSet =
@@ -2002,7 +2255,7 @@
                 paddingAll: "2px",
                 paddingStart: "5px",
                 paddingEnd: "5px",
-                backgroundColor: FLEX_THEME.accent,
+                backgroundColor: theme.accent,
                 cornerRadius: "2px",
                 contents: [
                   {
@@ -2070,7 +2323,7 @@
   }
 
   function buildWorkoutAltText(workout) {
-    const title = resolveWorkoutTitle(workout.title);
+    const title = resolveWorkoutTitle(workout.title, workout.user);
     const displayName = workout && workout.user ? String(workout.user.displayName || "").trim() : "";
 
     if (displayName && displayName.toLowerCase() !== "anonymous") {
@@ -2112,7 +2365,7 @@
     const dateText = headerMetaBox && headerMetaBox.contents[0] ? headerMetaBox.contents[0].text : workout.date || "-";
     const userText =
       headerMetaBox && headerMetaBox.contents[1] ? headerMetaBox.contents[1].text : "";
-    const titleText = headerContents[1] ? headerContents[1].text : resolveWorkoutTitle(workout.title);
+    const titleText = headerContents[1] ? headerContents[1].text : resolveWorkoutTitle(workout.title, workout.user);
     return [
       '<section class="preview-bubble">',
       '  <div class="preview-bubble-header preview-bubble-header-themed">',
@@ -2208,12 +2461,14 @@
     }
 
     return [
-      '<article class="summary-card">',
-      "  <small>" + escapeHtml(exercise.name || "未入力種目") + "</small>",
-      '  <strong class="summary-value">' +
+      '<article class="summary-card summary-card-inline">',
+      '  <div class="summary-card-main">',
+      '    <strong class="summary-name">' + escapeHtml(exercise.name || "未入力種目") + "</strong>",
+      '    <span class="summary-inline-meta">' + escapeHtml(caption.join(" / ")) + "</span>",
+      "  </div>",
+      '  <strong class="summary-value summary-value-inline">' +
         escapeHtml(formatMetric(exercise.maxEstimated1rm || 0, "kg", 1)) +
         "</strong>",
-      '  <div class="metric-caption">' + escapeHtml(caption.join(" / ")) + "</div>",
       "</article>"
     ].join("");
   }
@@ -2279,9 +2534,11 @@
       .join("");
 
     const candidateExercises = exercise.selectionMuscle
-      ? EXERCISE_CATALOG.filter(function (item) {
-        return item.muscle === exercise.selectionMuscle;
-      })
+      ? exercise.selectionMuscle === "その他"
+        ? []
+        : EXERCISE_CATALOG.filter(function (item) {
+          return item.muscle === exercise.selectionMuscle;
+        })
       : [];
 
     const exerciseCards = candidateExercises.length
@@ -2303,6 +2560,8 @@
           );
         })
         .join("")
+      : exercise.selectionMuscle === "その他"
+        ? '<div class="empty-state compact">自由入力で種目を追加します。</div>'
       : exercise.selectionMuscle
         ? '<div class="empty-state compact">この部位には候補がまだありません。手入力で追加できます。</div>'
         : '<div class="empty-state compact">先に部位を選ぶと、候補の種目が表示されます。</div>';
@@ -2317,9 +2576,11 @@
       '    <span class="field-label">2. 種目を選択</span>',
       '    <div class="exercise-option-list">' + exerciseCards + "</div>",
       exercise.selectionMuscle
-        ? '    <div class="button-row"><button class="ghost-button" data-action="start-custom-exercise" data-exercise-id="' +
+        ? '    <div class="between-exercise-action"><button class="outline-button between-exercise-button" data-action="start-custom-exercise" data-exercise-id="' +
         escapeHtml(exercise.exerciseId) +
-        '" type="button">候補にない種目を入力</button></div>'
+        '" type="button">' +
+        escapeHtml(exercise.selectionMuscle === "その他" ? "＋自由入力" : "＋自由入力") +
+        "</button></div>"
         : "",
       "  </div>",
       "</div>"

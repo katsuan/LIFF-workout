@@ -32,7 +32,7 @@ body {
   margin: 0;
   padding: 0;
   background:
-    radial-gradient(circle at top right, rgba(201, 106, 45, 0.14), transparent 28%),
+    radial-gradient(circle at top right, var(--bg-accent), transparent 28%),
     linear-gradient(180deg, #fdfbf8 0%, var(--bg) 42%, #f2ece4 100%);
   color: var(--text);
   font-family: var(--font-sans);
@@ -74,6 +74,68 @@ button {
   font-weight: 650;
 }
 
+.input-head-row {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.user-avatar-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: inherit;
+}
+
+.user-avatar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 999px;
+  background: var(--primary-soft);
+  color: var(--primary-dark);
+  overflow: hidden;
+  flex: 0 0 auto;
+  position: relative;
+}
+
+.user-avatar-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.user-avatar-fallback {
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
+.user-avatar-edit {
+  position: absolute;
+  right: -1px;
+  bottom: -1px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.92);
+  color: var(--primary-dark);
+  font-size: 0.6rem;
+  line-height: 1;
+  box-shadow: 0 2px 6px rgba(31, 42, 31, 0.12);
+}
+
 .panel-card,
 .exercise-card,
 .history-card,
@@ -95,9 +157,46 @@ button {
   gap: 12px;
 }
 
+.stats-list {
+  display: grid;
+  gap: 8px;
+}
+
 .summary-card,
 .ranking-card {
   padding: 14px 16px;
+}
+
+.summary-card-inline {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 12px;
+}
+
+.summary-card-main {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+  flex: 1;
+}
+
+.summary-name {
+  display: block;
+  color: var(--text);
+  font-size: 0.98rem;
+  font-weight: 650;
+  line-height: 1.2;
+}
+
+.summary-inline-meta {
+  display: block;
+  color: var(--text);
+  opacity: 0.7;
+  font-size: 0.8rem;
+  font-weight: 550;
+  line-height: 1.2;
 }
 
 .summary-value,
@@ -105,6 +204,13 @@ button {
   display: block;
   font-size: 1.1rem;
   font-weight: 700;
+}
+
+.summary-value-inline {
+  flex: 0 0 auto;
+  font-size: 0.98rem;
+  text-align: right;
+  white-space: nowrap;
 }
 
 .status-panel {
@@ -431,6 +537,77 @@ button {
   color: var(--text);
   font-size: 0.88rem;
   font-weight: 650;
+}
+
+.settings-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  display: grid;
+  place-items: end center;
+  padding: 12px 12px calc(84px + env(safe-area-inset-bottom));
+}
+
+.settings-modal-scrim {
+  position: absolute;
+  inset: 0;
+  border: 0;
+  background: rgba(31, 42, 31, 0.2);
+}
+
+.settings-modal {
+  position: relative;
+  z-index: 1;
+  width: min(100%, 520px);
+  display: grid;
+  gap: 12px;
+  padding: 14px;
+  border: 1px solid rgba(215, 224, 212, 0.92);
+  border-radius: 22px;
+  background: rgba(255, 255, 255, 0.98);
+  box-shadow: 0 20px 42px rgba(31, 42, 31, 0.16);
+}
+
+.settings-modal-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.settings-modal-copy {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.88rem;
+  line-height: 1.4;
+}
+
+.settings-color-row {
+  display: grid;
+  grid-template-columns: 92px minmax(0, 1fr);
+  gap: 10px;
+}
+
+.settings-color-field,
+.settings-hex-field {
+  min-height: 62px;
+}
+
+.color-input {
+  width: 100%;
+  height: 34px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+}
+
+.settings-modal-actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.modal-close-button {
+  min-height: 36px;
 }
 
 .exercise-meta,
@@ -868,7 +1045,7 @@ button:disabled {
   margin: -12px -12px 10px;
   padding: 10px 12px;
   border-radius: 16px 16px 10px 10px;
-  background: linear-gradient(135deg, var(--primary) 0%, #d8854f 100%);
+  background: var(--primary);
 }
 
 .preview-bubble-header-themed .preview-note,
