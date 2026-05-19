@@ -76,7 +76,9 @@
       openJsonPreview: false,
       catalogFilter: "all",
       catalogQuery: "",
-      suppressScrollSpyUntil: 0
+      suppressScrollSpyUntil: 0,
+      expandedExerciseId: null,
+      memoOpenExerciseIds: {}
     },
     liff: {
       initialized: false,
@@ -271,6 +273,34 @@
     }
     appState.workout.exercises.push(exercise);
     appState.activeTab = "input";
+    appState.ui.expandedExerciseId = exercise.exerciseId;
+    touchWorkout();
+    renderInput();
+    renderPreview();
+    renderShell();
+    scrollToExerciseCard(exercise.exerciseId);
+  }
+
+  function insertExerciseAfter(afterExerciseId, catalogId) {
+    const exercise = createEmptyExercise();
+    if (catalogId) {
+      applyCatalogToExercise(exercise, catalogId);
+    }
+
+    const nextExercises = appState.workout.exercises.slice();
+    const insertIndex = nextExercises.findIndex(function (item) {
+      return item.exerciseId === afterExerciseId;
+    });
+
+    if (insertIndex === -1) {
+      addExercise(catalogId);
+      return;
+    }
+
+    nextExercises.splice(insertIndex + 1, 0, exercise);
+    appState.workout.exercises = nextExercises;
+    appState.activeTab = "input";
+    appState.ui.expandedExerciseId = exercise.exerciseId;
     touchWorkout();
     renderInput();
     renderPreview();
@@ -281,11 +311,18 @@
   function removeExercise(exerciseId) {
     if (appState.workout.exercises.length === 1) {
       appState.workout.exercises = [createEmptyExercise()];
+      appState.ui.expandedExerciseId = appState.workout.exercises[0].exerciseId;
     } else {
       appState.workout.exercises = appState.workout.exercises.filter(function (exercise) {
         return exercise.exerciseId !== exerciseId;
       });
+      if (appState.ui.expandedExerciseId === exerciseId) {
+        appState.ui.expandedExerciseId = appState.workout.exercises[0]
+          ? appState.workout.exercises[0].exerciseId
+          : "";
+      }
     }
+    delete appState.ui.memoOpenExerciseIds[exerciseId];
     touchWorkout();
     renderInput();
     renderPreview();
@@ -300,6 +337,7 @@
       return;
     }
     exercise.sets.push(createEmptySet());
+    appState.ui.expandedExerciseId = exerciseId;
     touchWorkout();
     renderInput();
     renderPreview();
@@ -320,6 +358,7 @@
         return set.setId !== setId;
       });
     }
+    appState.ui.expandedExerciseId = exerciseId;
     touchWorkout();
     renderInput();
     renderPreview();
@@ -345,6 +384,7 @@
       return;
     }
     exercise.selectionMuscle = muscle;
+    appState.ui.expandedExerciseId = exerciseId;
     renderInput();
   }
 
@@ -356,6 +396,7 @@
       return;
     }
     applyCatalogToExercise(exercise, catalogId);
+    appState.ui.expandedExerciseId = exerciseId;
     touchWorkout();
     renderInput();
     renderPreview();
@@ -372,6 +413,7 @@
     exercise.isCustom = true;
     exercise.primaryMuscle = exercise.selectionMuscle || exercise.primaryMuscle || "";
     exercise.name = "";
+    appState.ui.expandedExerciseId = exerciseId;
     touchWorkout();
     renderInput();
     renderPreview();
@@ -391,9 +433,23 @@
     exercise.name = "";
     exercise.memo = "";
     exercise.sets = [createEmptySet()];
+    appState.ui.expandedExerciseId = exerciseId;
+    delete appState.ui.memoOpenExerciseIds[exerciseId];
     touchWorkout();
     renderInput();
     renderPreview();
+  }
+
+  function toggleExercisePanel(exerciseId) {
+    appState.ui.expandedExerciseId =
+      appState.ui.expandedExerciseId === exerciseId ? "" : exerciseId;
+    renderInput();
+  }
+
+  function toggleExerciseMemo(exerciseId) {
+    appState.ui.memoOpenExerciseIds[exerciseId] = !isExerciseMemoOpen(exerciseId);
+    appState.ui.expandedExerciseId = exerciseId;
+    renderInput();
   }
 
   function calculateWorkout(workout) {
@@ -515,6 +571,9 @@
 
     appState.workout = hydrateWorkout(restored);
     syncWorkoutUser();
+    appState.ui.expandedExerciseId = appState.workout.exercises[0]
+      ? appState.workout.exercises[0].exerciseId
+      : "";
     appState.activeTab = "input";
     renderShell();
     renderInput();
@@ -598,6 +657,9 @@
 
   function renderInput() {
     const workout = appState.workout;
+    if (appState.ui.expandedExerciseId === null) {
+      appState.ui.expandedExerciseId = getDefaultExpandedExerciseId(workout.exercises);
+    }
     const html = [
       '<div class="input-stack">',
       '  <section class="panel-card input-card">',
@@ -624,11 +686,7 @@
       "    </div>",
       renderInputUtilityActions(),
       "  </section>",
-      workout.exercises
-        .map(function (exercise, exerciseIndex) {
-          return renderExerciseCard(exercise, exerciseIndex);
-        })
-        .join(""),
+      renderExerciseStack(workout.exercises),
       "</div>"
     ].join("");
 
@@ -912,6 +970,12 @@
       case "add-quick-exercise":
         addExercise(button.getAttribute("data-catalog-id"));
         break;
+      case "insert-exercise-after":
+        insertExerciseAfter(
+          button.getAttribute("data-after-exercise-id"),
+          button.getAttribute("data-catalog-id")
+        );
+        break;
       case "set-exercise-muscle":
         updateExerciseSelectionMuscle(
           button.getAttribute("data-exercise-id"),
@@ -929,6 +993,12 @@
         break;
       case "change-exercise-choice":
         resetExerciseChoice(button.getAttribute("data-exercise-id"));
+        break;
+      case "toggle-exercise-panel":
+        toggleExercisePanel(button.getAttribute("data-exercise-id"));
+        break;
+      case "toggle-exercise-memo":
+        toggleExerciseMemo(button.getAttribute("data-exercise-id"));
         break;
       default:
         break;
@@ -1356,6 +1426,8 @@
     const exerciseTitle = exercise.isCustom
       ? "種目名を入力"
       : exercise.name || "種目を選択";
+    const isExpanded = !showExerciseFields || isExerciseExpanded(exercise.exerciseId);
+    const summary = showExerciseFields ? renderExerciseSummary(exercise) : "";
 
     return [
       '<section class="exercise-card" data-exercise-card-id="' +
@@ -1367,8 +1439,21 @@
       '      <h3 class="exercise-title">' +
         escapeHtml(exerciseTitle) +
         "</h3>",
+      summary ? '      <p class="exercise-meta compact">' + summary + "</p>" : "",
       "    </div>",
       '    <div class="exercise-actions">' +
+        (showExerciseFields
+          ? renderActionButton({
+              label: isExpanded ? "閉じる" : "開く",
+              icon: isExpanded ? "▴" : "▾",
+              variant: "outline-button compact-action-button exercise-toggle-button",
+              action: "toggle-exercise-panel",
+              title: isExpanded ? "種目をたたむ" : "種目を開く",
+              attrs: {
+                "data-exercise-id": exercise.exerciseId
+              }
+            })
+          : "") +
         (showExerciseFields
           ? renderActionButton({
               label: "編集",
@@ -1396,13 +1481,38 @@
       '  <div class="form-grid">',
       !showExerciseFields
         ? renderExercisePicker(exercise)
-        : renderSelectedExerciseFields(exercise),
+        : renderSelectedExerciseFields(exercise, isExpanded),
       "  </div>",
       "</section>"
     ].join("");
   }
 
-  function renderSelectedExerciseFields(exercise) {
+  function renderExerciseStack(exercises) {
+    return exercises
+      .map(function (exercise, exerciseIndex) {
+        return (
+          renderExerciseCard(exercise, exerciseIndex) +
+          renderInsertExerciseButton(exercise.exerciseId)
+        );
+      })
+      .join("");
+  }
+
+  function renderInsertExerciseButton(afterExerciseId) {
+    return [
+      '<div class="between-exercise-action">',
+      '  <button class="outline-button between-exercise-button" data-action="insert-exercise-after" data-after-exercise-id="' +
+        escapeHtml(afterExerciseId) +
+        '" type="button">+ 種目追加</button>',
+      "</div>"
+    ].join("");
+  }
+
+  function renderSelectedExerciseFields(exercise, isExpanded) {
+    if (!isExpanded) {
+      return "";
+    }
+
     return [
       '<div class="exercise-content-shell">',
       exercise.isCustom
@@ -1424,20 +1534,21 @@
         })
         .join(""),
       "    </div>",
-      '    <div class="button-row">',
+      '    <div class="button-row exercise-inline-actions">',
       '      <button class="mini-button" data-action="add-set" data-exercise-id="' +
       escapeHtml(exercise.exerciseId) +
       '" type="button">セット追加</button>',
-      "    </div>",
-      fieldTemplate({
-        label: "種目メモ",
-        input:
-          '<textarea class="textarea-input" data-exercise-field="memo" data-exercise-id="' +
-          escapeHtml(exercise.exerciseId) +
-          '" placeholder="フォームや調子のメモ">' +
-          escapeHtml(exercise.memo || "") +
-          "</textarea>"
+      renderActionButton({
+        label: getExerciseMemoButtonLabel(exercise),
+        variant: "ghost-button memo-toggle-button",
+        action: "toggle-exercise-memo",
+        title: "種目メモ",
+        attrs: {
+          "data-exercise-id": exercise.exerciseId
+        }
       }),
+      "    </div>",
+      renderExerciseMemoField(exercise),
       "</div>"
     ].join("");
   }
@@ -1446,17 +1557,11 @@
     const hasValidSet = isValidSetInput(toNullableNumber(set.weight), toNullableNumber(set.reps));
     return [
       '<div class="set-row">',
-      '  <div class="set-row-head">',
-      '    <span class="set-badge">Set ' +
-      (setIndex + 1) +
-      "</span>",
-      '    <div class="set-head-meta"><small class="metric-label">RM</small><strong class="metric-value" data-set-summary="estimated1rm" data-exercise-id="' +
-      escapeHtml(exerciseId) +
-      '" data-set-id="' +
-      escapeHtml(set.setId) +
-      '">' +
-      escapeHtml(hasValidSet ? formatMetric(set.estimated1rm || 0, "kg", 1) : "-") +
-      '</strong></div>',
+      '  <div class="set-row-main">',
+      '    <div class="set-side">',
+      '      <span class="set-badge">Set ' +
+        (setIndex + 1) +
+        "</span>",
       renderActionButton({
         label: "削除",
         icon: "−",
@@ -1468,8 +1573,7 @@
           "data-set-id": set.setId
         }
       }),
-      "  </div>",
-      '  <div class="set-fields">',
+      "    </div>",
       '    <label class="inline-field tile-field compact-tile-field">',
       "      <span>重量 kg</span>",
       '      <input class="number-input" aria-label="重量 kg" data-set-field="weight" data-exercise-id="' +
@@ -1490,6 +1594,13 @@
       escapeHtml(String(set.reps ?? "")) +
       '" />',
       "    </label>",
+      '    <div class="set-head-meta"><small class="metric-label">RM</small><strong class="metric-value" data-set-summary="estimated1rm" data-exercise-id="' +
+        escapeHtml(exerciseId) +
+        '" data-set-id="' +
+        escapeHtml(set.setId) +
+        '">' +
+        escapeHtml(hasValidSet ? formatMetric(set.estimated1rm || 0, "kg", 1) : "-") +
+        "</strong></div>",
       "  </div>",
       "</div>"
     ].join("");
@@ -2110,15 +2221,18 @@
     const exerciseCards = candidateExercises.length
       ? candidateExercises
         .map(function (item) {
+          const isWide = item.name.length >= 9;
           return (
-            '<button class="quick-exercise-button" data-action="choose-exercise-card" data-exercise-id="' +
+            '<button class="exercise-option-button' +
+            (isWide ? " is-wide" : "") +
+            '" data-action="choose-exercise-card" data-exercise-id="' +
             escapeHtml(exercise.exerciseId) +
             '" data-catalog-id="' +
             escapeHtml(item.id) +
             '" type="button">' +
-            '<strong>' +
+            '<span class="exercise-option-label">' +
             escapeHtml(item.name) +
-            "</strong>" +
+            "</span>" +
             "</button>"
           );
         })
@@ -2135,7 +2249,7 @@
       "  </div>",
       '  <div class="field-group">',
       '    <span class="field-label">2. 種目を選択</span>',
-      '    <div class="quick-exercise-grid selection-grid">' + exerciseCards + "</div>",
+      '    <div class="exercise-option-list">' + exerciseCards + "</div>",
       exercise.selectionMuscle
         ? '    <div class="button-row"><button class="ghost-button" data-action="start-custom-exercise" data-exercise-id="' +
         escapeHtml(exercise.exerciseId) +
@@ -2144,6 +2258,69 @@
       "  </div>",
       "</div>"
     ].join("");
+  }
+
+  function isExerciseExpanded(exerciseId) {
+    if (!exerciseId) {
+      return false;
+    }
+    return appState.ui.expandedExerciseId === exerciseId;
+  }
+
+  function getDefaultExpandedExerciseId(exercises) {
+    const matchedExercise = (exercises || []).find(function (exercise) {
+      return Boolean(exercise && (exercise.catalogId || exercise.isCustom));
+    });
+    return matchedExercise ? matchedExercise.exerciseId : "";
+  }
+
+  function isExerciseMemoOpen(exerciseId) {
+    return Boolean(appState.ui.memoOpenExerciseIds[exerciseId]);
+  }
+
+  function renderExerciseSummary(exercise) {
+    const validSetCount = (exercise.sets || []).filter(function (set) {
+      return isValidSetInput(toNullableNumber(set.weight), toNullableNumber(set.reps));
+    }).length;
+    const summaryParts = [];
+
+    if (validSetCount > 0) {
+      summaryParts.push(validSetCount + "セット");
+    }
+    if (exercise.maxEstimated1rm > 0) {
+      summaryParts.push("RM " + formatMetric(exercise.maxEstimated1rm, "kg", 1));
+    }
+
+    return summaryParts.join(" / ");
+  }
+
+  function getExerciseMemoButtonLabel(exercise) {
+    const isOpen = isExerciseMemoOpen(exercise.exerciseId);
+    const hasMemo = Boolean(String(exercise.memo || "").trim());
+
+    if (isOpen) {
+      return "メモを閉じる";
+    }
+
+    return hasMemo ? "メモ編集" : "メモ追加";
+  }
+
+  function renderExerciseMemoField(exercise) {
+    const isOpen = isExerciseMemoOpen(exercise.exerciseId);
+    if (!isOpen) {
+      return "";
+    }
+
+    return fieldTemplate({
+      label: "種目メモ",
+      className: "memo-field",
+      input:
+        '<textarea class="textarea-input compact-textarea" data-exercise-field="memo" data-exercise-id="' +
+        escapeHtml(exercise.exerciseId) +
+        '" placeholder="フォームや調子のメモ">' +
+        escapeHtml(exercise.memo || "") +
+        "</textarea>"
+    });
   }
 
   function formatFlexWeight(weight) {
