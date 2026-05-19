@@ -119,23 +119,6 @@ button {
   font-weight: 700;
 }
 
-.user-avatar-edit {
-  position: absolute;
-  right: -1px;
-  bottom: -1px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 16px;
-  height: 16px;
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.92);
-  color: var(--primary-dark);
-  font-size: 0.6rem;
-  line-height: 1;
-  box-shadow: 0 2px 6px rgba(31, 42, 31, 0.12);
-}
-
 .panel-card,
 .exercise-card,
 .history-card,
@@ -365,6 +348,19 @@ button {
   gap: 8px;
 }
 
+.stats-head {
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: nowrap;
+}
+
+.stats-head .badge {
+  margin-left: auto;
+  flex: 0 0 auto;
+  align-self: center;
+}
+
 .panel-head.compact {
   margin-bottom: 10px;
 }
@@ -570,7 +566,7 @@ button {
 
 .settings-modal-head {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   justify-content: space-between;
   gap: 12px;
 }
@@ -595,10 +591,26 @@ button {
 
 .color-input {
   width: 100%;
-  height: 34px;
+  min-height: 36px;
   padding: 0;
   border: 0;
   background: transparent;
+  appearance: none;
+  -webkit-appearance: none;
+}
+
+.color-input::-webkit-color-swatch-wrapper {
+  padding: 0;
+}
+
+.color-input::-webkit-color-swatch {
+  border: 0;
+  border-radius: 999px;
+}
+
+.color-input::-moz-color-swatch {
+  border: 0;
+  border-radius: 999px;
 }
 
 .settings-modal-actions {
@@ -640,7 +652,7 @@ button {
 
 .set-row-main {
   display: grid;
-  grid-template-columns: 56px minmax(0, 1fr) minmax(0, 1fr) 94px;
+  grid-template-columns: 56px repeat(3, minmax(0, 1fr));
   gap: 8px;
   align-items: center;
   padding-top: 2px;
@@ -661,15 +673,20 @@ button {
   align-items: flex-start;
   align-self: center;
   gap: 1px;
-  min-width: 88px;
   min-height: 50px;
-  padding: 8px 6px 6px;
+  width: 100%;
+  padding: 8px 10px 6px;
+  border-radius: 16px;
+}
+
+.set-head-meta.is-max-rm {
+  background: var(--primary-soft);
 }
 
 .set-head-meta .metric-label {
   position: absolute;
   top: -0.48rem;
-  left: 8px;
+  left: 10px;
   display: inline-flex;
   align-items: center;
   padding: 0 4px;
@@ -678,6 +695,10 @@ button {
   font-size: 0.73rem;
   font-weight: 700;
   line-height: 1.2;
+}
+
+.set-head-meta.is-max-rm .metric-label {
+  background: var(--primary-soft);
 }
 
 .set-head-meta .metric-value {
@@ -1391,6 +1412,36 @@ details.json-accordion summary::-webkit-details-marker {
     align-items: stretch;
   }
 
+  .stats-head {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: nowrap;
+  }
+
+  .settings-modal {
+    gap: 10px;
+    padding: 12px;
+  }
+
+  .settings-modal-head {
+    align-items: flex-start;
+  }
+
+  .settings-color-row {
+    grid-template-columns: 1fr;
+  }
+
+  .settings-color-field,
+  .settings-hex-field {
+    min-height: auto;
+  }
+
+  .modal-close-button {
+    min-height: 34px;
+    padding: 6px 12px;
+  }
+
   .exercise-header,
   .exercise-selected-head {
     flex-direction: row;
@@ -1427,7 +1478,7 @@ details.json-accordion summary::-webkit-details-marker {
   }
 
   .set-row-main {
-    grid-template-columns: 52px minmax(0, 1fr) minmax(0, 1fr) 88px;
+    grid-template-columns: 52px repeat(3, minmax(0, 1fr));
     gap: 6px;
   }
 

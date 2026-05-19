@@ -834,7 +834,7 @@
         label: "ワークアウトタイトル",
         className: "tile-field",
         input:
-          '<input class="text-input" aria-label="ワークアウトタイトル" data-field="title" type="text" placeholder="空欄なら WorkOut / 背中トレ など" value="' +
+          '<input class="text-input" aria-label="ワークアウトタイトル" data-field="title" type="text" placeholder="背中トレ など" value="' +
           escapeHtml(workout.title || "") +
           '" />'
       }),
@@ -938,7 +938,7 @@
     const periodData = appState.rankingData[appState.rankingPeriod];
     const html = [
       '<section class="panel-card">',
-      '  <div class="panel-head">',
+      '  <div class="panel-head stats-head">',
       "    <div>",
       '      <p class="section-label">Ranking Mock</p>',
       '      <h2 class="panel-title">ランキングタブ</h2>',
@@ -1246,7 +1246,7 @@
       }
       set[field] = target.value;
       touchWorkout();
-      syncRenderedSetSummary(exerciseId, setId);
+      syncRenderedSetSummary(exerciseId);
       renderPreview();
     }
   }
@@ -1778,6 +1778,10 @@
       return item.exerciseId === exerciseId;
     });
     const canRemoveSet = exercise ? exercise.sets.length > 1 : false;
+    const isMaxRmSet =
+      Boolean(exercise && exercise.maxEstimated1rm) &&
+      hasValidSet &&
+      roundNumber(set.estimated1rm || 0, 1) === roundNumber(exercise.maxEstimated1rm || 0, 1);
     return [
       '<div class="set-row">',
       '  <div class="set-row-main">',
@@ -1818,7 +1822,13 @@
       escapeHtml(String(set.reps ?? "")) +
       '" />',
       "    </label>",
-      '    <div class="set-head-meta"><small class="metric-label">RM</small><strong class="metric-value" data-set-summary="estimated1rm" data-exercise-id="' +
+      '    <div class="set-head-meta' +
+        (isMaxRmSet ? " is-max-rm" : "") +
+        '" data-set-meta="estimated1rm" data-exercise-id="' +
+        escapeHtml(exerciseId) +
+        '" data-set-id="' +
+        escapeHtml(set.setId) +
+        '"><small class="metric-label">RM(kg)</small><strong class="metric-value" data-set-summary="estimated1rm" data-exercise-id="' +
         escapeHtml(exerciseId) +
         '" data-set-id="' +
         escapeHtml(set.setId) +
@@ -1830,7 +1840,7 @@
     ].join("");
   }
 
-  function syncRenderedSetSummary(exerciseId, setId) {
+  function syncRenderedSetSummary(exerciseId) {
     const exercise = appState.workout.exercises.find(function (item) {
       return item.exerciseId === exerciseId;
     });
@@ -1838,26 +1848,33 @@
       return;
     }
 
-    const set = (exercise.sets || []).find(function (item) {
-      return item.setId === setId;
+    const maxRm = roundNumber(exercise.maxEstimated1rm || 0, 1);
+    (exercise.sets || []).forEach(function (set) {
+      const summaryNode = document.querySelector(
+        '[data-set-summary="estimated1rm"][data-exercise-id="' +
+        cssEscape(exerciseId) +
+        '"][data-set-id="' +
+        cssEscape(set.setId) +
+        '"]'
+      );
+      const metaNode = document.querySelector(
+        '[data-set-meta="estimated1rm"][data-exercise-id="' +
+        cssEscape(exerciseId) +
+        '"][data-set-id="' +
+        cssEscape(set.setId) +
+        '"]'
+      );
+      if (!summaryNode || !metaNode) {
+        return;
+      }
+
+      const hasValidSet = isValidSetInput(toNullableNumber(set.weight), toNullableNumber(set.reps));
+      summaryNode.textContent = hasValidSet ? formatMetric(set.estimated1rm || 0, "kg", 1) : "-";
+      metaNode.classList.toggle(
+        "is-max-rm",
+        Boolean(maxRm) && hasValidSet && roundNumber(set.estimated1rm || 0, 1) === maxRm
+      );
     });
-    if (!set) {
-      return;
-    }
-
-    const summaryNode = document.querySelector(
-      '[data-set-summary="estimated1rm"][data-exercise-id="' +
-      cssEscape(exerciseId) +
-      '"][data-set-id="' +
-      cssEscape(setId) +
-      '"]'
-    );
-    if (!summaryNode) {
-      return;
-    }
-
-    const hasValidSet = isValidSetInput(toNullableNumber(set.weight), toNullableNumber(set.reps));
-    summaryNode.textContent = hasValidSet ? formatMetric(set.estimated1rm || 0, "kg", 1) : "-";
   }
 
   function renderExerciseMetrics(workout) {
@@ -1871,7 +1888,7 @@
 
     return [
       '<section class="panel-card">',
-      '  <div class="panel-head">',
+      '  <div class="panel-head stats-head">',
       '    <h2 class="panel-title">STATS</h2>',
       '    <span class="badge">' + escapeHtml(String(previewExercises.length)) + "種目</span>",
       "  </div>",
@@ -1918,7 +1935,7 @@
       : '<span class="user-avatar-fallback">' + escapeHtml(getUserInitial(profile.displayName)) + "</span>";
     return [
       '<button class="user-avatar-button" data-action="open-settings-modal" type="button" aria-label="表示設定を開く" title="表示設定">',
-      '  <span class="user-avatar">' + avatar + '<span class="user-avatar-edit" aria-hidden="true">⚙</span></span>',
+      '  <span class="user-avatar">' + avatar + "</span>",
       "</button>"
     ].join("");
   }
@@ -1932,10 +1949,7 @@
       '  <button class="settings-modal-scrim" data-action="close-settings-modal" type="button" aria-label="閉じる"></button>',
       '  <section class="settings-modal" role="dialog" aria-modal="true" aria-label="表示設定">',
       '    <div class="settings-modal-head">',
-      '      <div>',
-      '        <p class="section-label">Appearance</p>',
-      '        <h3 class="panel-title">ベースカラー設定</h3>',
-      "      </div>",
+      '      <h3 class="panel-title">ベースカラー設定</h3>',
       '      <button class="ghost-button modal-close-button" data-action="close-settings-modal" type="button">閉じる</button>',
       "    </div>",
       '    <p class="settings-modal-copy">アプリと送信プレビューの基調色を変更できます。</p>',
